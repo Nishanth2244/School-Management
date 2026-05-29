@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
 
-    @Query("SELECT u.username FROM User u WHERE u.role = com.project.student.education.enums.Role.ROLE_ADMIN")
+    @Query("SELECT u.username FROM User u WHERE u.role = com.project.student.education.enums.Role.ADMIN")
     List<String> findAdminUsernames();
+    
+	Optional<User> findByEmail(String email);
 }

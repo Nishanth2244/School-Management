@@ -46,7 +46,7 @@ public class TeacherService {
         User user = User.builder()
                 .username(teacherId)
                 .password(passwordEncoder.encode(rawPassword))
-                .role(Role.ROLE_TEACHER)
+                .role(Role.TEACHER)
                 .email(dto.getEmail())
                 .build();
 

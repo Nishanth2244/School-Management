@@ -127,7 +127,7 @@ public class AdmissionService {
         User user = User.builder()
                 .username(studentId)
                 .password(passwordEncoder.encode(rawPassword))
-                .role(Role.ROLE_STUDENT)
+                .role(Role.STUDENT)
                 .email(admission.getEmail())
                 .build();
 
