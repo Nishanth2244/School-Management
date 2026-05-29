@@ -79,7 +79,7 @@ public class AssignmentController {
         return new ResponseEntity<>(assignmentDTO, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','ADMIN')")
 
     @GetMapping("/assignments/teacher/{teacherId}")
     public ResponseEntity<List<AssignmentDTO>> getAllAssignments(@PathVariable String teacherId) {

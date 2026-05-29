@@ -39,6 +39,9 @@ public class StudentService {
     @Autowired
     private TeacherRepository teacherRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
 
     @Autowired
     private TimetableRepository timetableRepository;
@@ -86,6 +89,7 @@ public class StudentService {
         existing.setPincode(dto.getPincode());
         existing.setContactNumber(dto.getContactNumber());
         existing.setEmail(dto.getEmail());
+
         existing.setFatherName(dto.getFatherName());
         existing.setFatherContact(dto.getFatherContact());
         existing.setMotherName(dto.getMotherName());
@@ -120,6 +124,25 @@ public class StudentService {
                 fee.setAmount(amountPerTerm);
                 studentFeeRepository.save(fee);
             }
+        }
+        if (existing.getUser() != null) {
+            User user = existing.getUser();
+
+            String oldEmail = user.getEmail();
+            String newEmail = dto.getEmail();
+
+            boolean emailChanged = newEmail != null && !newEmail.equalsIgnoreCase(oldEmail);
+
+            // Update Student.email
+            existing.setEmail(newEmail);
+
+            if (emailChanged) {
+                user.setEmail(newEmail);       // This is CRITICAL!
+                userRepository.save(user);     // Update Auth table
+            }
+        } else {
+            // Fallback (if student has no user mapped, rare case)
+            existing.setEmail(dto.getEmail());
         }
 
 

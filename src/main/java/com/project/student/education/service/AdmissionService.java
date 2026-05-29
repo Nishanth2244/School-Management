@@ -53,7 +53,8 @@ public class AdmissionService {
 
         if (photoUrl != null && !photoUrl.isEmpty()) {
             try {
-                String imageUrl = fileService.uploadFile(photoUrl);
+                String imageUrl
+                        = fileService.uploadFile(photoUrl);
 
                 admission.setPhotoUrl(imageUrl);
 

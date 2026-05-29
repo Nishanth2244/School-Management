@@ -23,6 +23,9 @@ public class ClassSectionService {
     private final ClassSubjectMappingRepository classSubjectMappingRepository;
     private final SubjectRepository subjectRepository;
 
+    // ============================
+    // CREATE CLASS SECTION
+    // ============================
     public ClassSectionDTO createClassSection(ClassSectionDTO dto) {
 
         classSectionRepository.findByClassNameAndSectionAndAcademicYear(
@@ -37,6 +40,14 @@ public class ClassSectionService {
         Teacher classTeacher = null;
 
         if (dto.getClassTeacherId() != null) {
+
+            // ⭐ CHECK IF TEACHER IS ALREADY CLASS TEACHER OF ANOTHER SECTION
+            if (classSectionRepository.existsByClassTeacher_TeacherId(dto.getClassTeacherId())) {
+                throw new RuntimeException(
+                        "Teacher " + dto.getClassTeacherId() + " is already assigned as class teacher to another class section."
+                );
+            }
+
             classTeacher = teacherRepository.findById(dto.getClassTeacherId())
                     .orElseThrow(() ->
                             new RuntimeException("Teacher not found with ID: " + dto.getClassTeacherId()));
@@ -54,6 +65,7 @@ public class ClassSectionService {
 
         ClassSection savedClass = classSectionRepository.save(classSection);
 
+        // SAVE SUBJECTS
         if (dto.getSubjectIds() != null) {
             for (String subjectId : dto.getSubjectIds()) {
 
@@ -77,6 +89,9 @@ public class ClassSectionService {
     }
 
 
+    // ============================
+    // GET ALL CLASS SECTIONS
+    // ============================
     public List<ClassSectionDTO> getAllClassSections() {
         return classSectionRepository.findAll()
                 .stream()
@@ -84,6 +99,9 @@ public class ClassSectionService {
                 .toList();
     }
 
+    // ============================
+    // GET CLASS SECTION
+    // ============================
     public ClassSectionDTO getClassSection(String className, String section, String academicYear) {
         ClassSection found = classSectionRepository
                 .findByClassNameAndAcademicYear(className, academicYear)
@@ -91,6 +109,9 @@ public class ClassSectionService {
         return mapToDTO(found);
     }
 
+    // ============================
+    // GET STUDENTS OF CLASS SECTION
+    // ============================
     public List<StudentDTO> getStudentsByClassSection(String classSectionId) {
         List<Student> students = studentRepository.findByClassSection_ClassSectionId(classSectionId);
 
@@ -103,7 +124,18 @@ public class ClassSectionService {
                 .toList();
     }
 
+    // ============================
+    // ASSIGN TEACHER TO CLASS SECTION
+    // ============================
     public ClassSectionDTO assignTeacher(String classSectionId, String teacherId, String teacherName) {
+
+        // ⭐ CHECK IF TEACHER ALREADY ASSIGNED ANYWHERE
+        if (classSectionRepository.existsByClassTeacher_TeacherId(teacherId)) {
+            throw new RuntimeException(
+                    "Teacher " + teacherId + " is already assigned as class teacher to another class section."
+            );
+        }
+
         ClassSection classSection = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Class section not found"));
 
@@ -116,6 +148,9 @@ public class ClassSectionService {
         return mapToDTO(updated);
     }
 
+    // ============================
+    // UPDATE CLASS SECTION
+    // ============================
     @Transactional
     public ClassSectionDTO updateClassSection(String id, ClassSectionDTO dto) {
 
@@ -127,7 +162,16 @@ public class ClassSectionService {
         existing.setAcademicYear(dto.getAcademicYear());
         existing.setCapacity(dto.getCapacity());
         existing.setCurrentStrength(dto.getCurrentStrength());
+
         if (dto.getClassTeacherId() != null) {
+
+            // ⭐ CHECK IF TEACHER ALREADY ASSIGNED
+            if (classSectionRepository.existsByClassTeacher_TeacherId(dto.getClassTeacherId())) {
+                throw new RuntimeException(
+                        "Teacher " + dto.getClassTeacherId() + " is already assigned as class teacher to another class section."
+                );
+            }
+
             Teacher teacher = teacherRepository.findById(dto.getClassTeacherId())
                     .orElseThrow(() ->
                             new RuntimeException("Teacher not found: " + dto.getClassTeacherId()));
@@ -135,7 +179,10 @@ public class ClassSectionService {
         } else {
             existing.setClassTeacher(null);
         }
+
+        // UPDATE SUBJECTS
         classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
+
         if (dto.getSubjectIds() != null && !dto.getSubjectIds().isEmpty()) {
             for (String subjectId : dto.getSubjectIds()) {
 
@@ -157,6 +204,9 @@ public class ClassSectionService {
         return mapToDTO(saved);
     }
 
+    // ============================
+    // MAP ENTITY TO DTO
+    // ============================
     private ClassSectionDTO mapToDTO(ClassSection section) {
         ClassSectionDTO dto = modelMapper.map(section, ClassSectionDTO.class);
 
@@ -180,7 +230,9 @@ public class ClassSectionService {
         return dto;
     }
 
-
+    // ============================
+    // ASSIGN STUDENT
+    // ============================
     public ClassSectionDTO assignStudentToClassSection(String classSectionId, String studentId) {
 
         ClassSection classSection = classSectionRepository.findById(classSectionId)
@@ -202,7 +254,9 @@ public class ClassSectionService {
         return mapToDTO(classSection);
     }
 
-
+    // ============================
+    // DELETE CLASS SECTION
+    // ============================
     @Transactional
     public ClassSectionDTO deleteClassSection(String classSectionId) {
 
@@ -215,6 +269,9 @@ public class ClassSectionService {
         return mapToDTO(classSection);
     }
 
+    // ============================
+    // GET UNASSIGNED STUDENTS
+    // ============================
     public List<StudentDTO> getUnassignedStudentsByGrade(String grade) {
         return studentRepository.findByGradeAndClassSectionIsNull(grade)
                 .stream()

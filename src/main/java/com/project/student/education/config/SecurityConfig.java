@@ -22,7 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -33,11 +32,13 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtFilter;
     private final UserDetailsService userDetailsService;
 
+    // ---------------- PASSWORD ENCODER ---------------------
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // ---------------- AUTH PROVIDER ------------------------
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -46,31 +47,34 @@ public class SecurityConfig {
         return provider;
     }
 
+    // ---------------- AUTH MANAGER -------------------------
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    // ---------------- CORS CONFIG (ACCEPT ALL IN LAN) ------
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(List.of("http://localhost:8081", "http://192.168.0.112:8081", "http://localhost:3000", "*"));
-
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-
-        config.setAllowedHeaders(List.of("*"));
+        // Allow frontend from localhost, LAN IPs, mobile hotspot
+        config.setAllowedOriginPatterns(List.of(
+                "*"
+        ));
 
         config.setAllowCredentials(true);
-
+        config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type", "Cache-Control"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 
-
+    // ---------------- SECURITY FILTER CHAIN ----------------
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -79,10 +83,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h.frameOptions(f -> f.deny()))
+                .authenticationProvider(authenticationProvider())
+
                 .authorizeHttpRequests(auth -> auth
 
+                        // CORS Preflight should always pass
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // PUBLIC ENDPOINTS (NO AUTH REQUIRED)
                         .requestMatchers(
                                 "/api/student/auth/login",
                                 "/api/student/auth/signup",
@@ -94,28 +102,26 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/**",
-                                "/api/student/notifications/**"
-                        ).permitAll()
-
-                        .requestMatchers("/images/**").permitAll()
-
-                        .requestMatchers(
+                                "/api/student/notifications/**",
+                                "/images/**",
                                 "/ai/**",
                                 "/apisyniq/**",
                                 "/api-syniq/**",
                                 "/syniq/**",
                                 "/index.html",
-                                "/*",
                                 "/static/**",
                                 "/public/**",
                                 "/webjars/**",
                                 "/RepresentUI.html"
                         ).permitAll()
 
+                        // Authenticated Endpoints
                         .requestMatchers("/api/student/auth/change-password").authenticated()
+
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider())
+
+                // JWT filter placed before UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

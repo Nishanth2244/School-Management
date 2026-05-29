@@ -39,8 +39,7 @@ public class NotificationController {
 
 
     @GetMapping(
-            value = "/subscribe/{receiverId}",
-            produces = MediaType.TEXT_EVENT_STREAM_VALUE
+           "/subscribe/{receiverId}"
     )
     public SseEmitter subscribe(@PathVariable String receiverId) {
         log.info("User subscribed for SSE: {}", receiverId);
@@ -59,9 +58,7 @@ public class NotificationController {
     }
 
 
-    // ---------------------------------------------
-    // 4. GET ALL NOTIFICATIONS
-    // ---------------------------------------------
+
     @GetMapping("/all/{receiverId}")
     public ResponseEntity<List<Notification>> getAll(
             @PathVariable String receiverId,
@@ -72,9 +69,7 @@ public class NotificationController {
     }
 
 
-    // ---------------------------------------------
-    // 5. MARK AS READ
-    // ---------------------------------------------
+
     @PostMapping("/read/{id}")
     public ResponseEntity<String> markRead(@PathVariable Long id) {
         notificationService.markAsRead(id);

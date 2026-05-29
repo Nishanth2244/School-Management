@@ -96,6 +96,12 @@ public class TeacherService {
     public TeacherDTO updateTeacher(String teacherId, TeacherDTO dto) {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
+        User user = teacher.getUser();
+
+        String oldEmail = teacher.getEmail();
+        String newEmail = dto.getEmail();
+        boolean emailChanged = newEmail != null && !newEmail.equalsIgnoreCase(oldEmail);
+
 
         teacher.setTeacherName(dto.getTeacherName());
         teacher.setEmail(dto.getEmail());
@@ -107,6 +113,10 @@ public class TeacherService {
 
         if (dto.getSubjectIds() != null) {
             teacher.setSubjectIds(dto.getSubjectIds());
+        }
+        if (emailChanged) {
+            user.setEmail(newEmail);       // THIS IS WHAT WAS MISSING ❗❗
+            userRepository.save(user);
         }
 
         teacherRepository.save(teacher);
