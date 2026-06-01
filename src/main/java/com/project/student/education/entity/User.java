@@ -38,10 +38,6 @@ public class User  implements UserDetails {
     
     private Boolean approvalStatus;
     private Boolean isAvailable;
-    
-    private String experience;
-
-    private String address;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

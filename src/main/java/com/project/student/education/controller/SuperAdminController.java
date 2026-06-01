@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.project.student.education.DTO.AdminCreateRequestDTO;
 import com.project.student.education.DTO.InviteAdminRequest;
+import com.project.student.education.DTO.InviteDriverRequest;
+import com.project.student.education.config.SecurityUtil;
 import com.project.student.education.service.SuperAdminService;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class SuperAdminController {
 	
 	private final SuperAdminService superAdminService;
+	private final SecurityUtil securityUtil;
 	
 	
 	@PostMapping("/addAdmin")
@@ -30,8 +33,10 @@ public class SuperAdminController {
 	@PostMapping("/invitePrinciple")
 	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest) {
 		
-		superAdminService.sendInvite(inviteAdminRequest);
+		Long userId = securityUtil.getCurrentUserId();
+		superAdminService.sendInvite(userId, inviteAdminRequest);
 		return "Invite link succesfully send to the: "+ inviteAdminRequest.getEmail();
 	}
+
 
 }

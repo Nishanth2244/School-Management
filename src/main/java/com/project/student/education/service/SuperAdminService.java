@@ -74,13 +74,13 @@ public class SuperAdminService {
 
 	
 	
-	public void sendInvite(InviteAdminRequest inviteAdminRequest) {
+	public void sendInvite(Long userId, InviteAdminRequest inviteAdminRequest) {
 		
 		if (userRepository.existsByEmail(inviteAdminRequest.getEmail())) {
             throw new IllegalArgumentException("User with email " + inviteAdminRequest.getEmail() + " already exists in the system.");
         }
 		
-		User superAdmin = userRepository.findById(inviteAdminRequest.getSuperAdminId())
+		User superAdmin = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("SuperAdmin not found. Invalid ID."));
 		
 		
@@ -126,7 +126,7 @@ public class SuperAdminService {
 	        throw new IllegalArgumentException("The onboarding link has expired. Please contact SuperAdmin for a new invite.");
 	    }
 		
-		String generatedUsername = idGenerator.generateIdWithoutYear("AS-PRI-");
+		String generatedUsername = idGenerator.generateIdWithoutYear("ACS-PRI-");
 		
 		User newUser = new User();
 	    newUser.setUsername(generatedUsername);
@@ -142,6 +142,7 @@ public class SuperAdminService {
 	    User user = userRepository.save(newUser);
 	    
 	    Admin admin = new Admin();
+	    admin.setId(user.getUsername());
 	    admin.setEmail(user.getEmail());
 	    admin.setFullName(user.getFullName());
 	    admin.setPhone(request.getPhoneNo());
