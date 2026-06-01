@@ -28,7 +28,7 @@ public class SubjectController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @PostMapping("/createSubject")
     public ResponseEntity<SubjectDTO> createSubject(@RequestBody SubjectDTO subject){
         SubjectDTO subjectDTO = subjectService.createSubject(subject);

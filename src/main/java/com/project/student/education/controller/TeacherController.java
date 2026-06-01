@@ -2,6 +2,7 @@ package com.project.student.education.controller;
 
 import com.project.student.education.DTO.ClassSectionMiniDTO;
 import com.project.student.education.DTO.TeacherDTO;
+import com.project.student.education.DTO.TeacherRegistrationDTO;
 import com.project.student.education.service.TeacherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +21,29 @@ public class TeacherController {
     private TeacherService teacherService;
 
 
-    // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/add")
-    public ResponseEntity<TeacherDTO> addTeacher(@RequestBody TeacherDTO dto) {
-        return new ResponseEntity<>(teacherService.addTeacher(dto), HttpStatus.CREATED);
+//    // ADMIN ONLY
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @PostMapping("/add")
+//    public ResponseEntity<TeacherDTO> addTeacher(@RequestBody TeacherDTO dto) {
+//        return new ResponseEntity<>(teacherService.addTeacher(dto), HttpStatus.CREATED);
+//    }
+
+    @PostMapping("/register-link")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<String> sendRegistrationLink(
+            @RequestParam String email) {
+
+        teacherService.sendRegistrationLink(email);
+
+        return ResponseEntity.ok(
+                "Registration link sent successfully");
+    }
+    @PostMapping("/register")
+    public ResponseEntity<TeacherDTO> registerTeacher(
+            @RequestBody TeacherRegistrationDTO dto) {
+
+        return ResponseEntity.ok(
+                teacherService.registerTeacher(dto));
     }
 
 

@@ -2,6 +2,7 @@ package com.project.student.education.service;
 
 import com.project.student.education.DTO.ClassSectionMiniDTO;
 import com.project.student.education.DTO.TeacherDTO;
+import com.project.student.education.DTO.TeacherRegistrationDTO;
 import com.project.student.education.DTO.TeacherWeeklyTimetableDTO;
 import com.project.student.education.entity.*;
 import com.project.student.education.enums.Role;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -32,6 +34,7 @@ public class TeacherService {
     private final TimetableRepository timetableRepository;
     private final SubjectRepository subjectRepository;
     private final JavaMailSender mailSender;
+    private final TeacherRegistrationTokenRepository registrationTokenRepository;
 
     private final ClassSubjectMappingRepository classSubjectMappingRepository;
 
@@ -344,4 +347,140 @@ public class TeacherService {
         mailSender.send(message);
     }
 
+    public String sendRegistrationLink(String email) {
+
+        if (teacherRepository.existsByEmail(email)) {
+            throw new RuntimeException("Teacher already exists");
+        }
+
+        String token = UUID.randomUUID().toString();
+
+        TeacherRegistrationToken registrationToken =
+                TeacherRegistrationToken.builder()
+                        .email(email)
+                        .token(token)
+                        .expiryTime(LocalDateTime.now().plusDays(2))
+                        .used(false)
+                        .build();
+
+        registrationTokenRepository.save(registrationToken);
+
+        String registrationLink =
+                "http://localhost:3000/teacher-register?token="
+                        + token;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setTo(email);
+
+        message.setSubject("Teacher Registration");
+
+        message.setText(
+                "Welcome to School ERP\n\n" +
+                        "Please complete your registration using below link:\n\n" +
+                        registrationLink +
+                        "\n\nThis link expires in 48 hours."
+        );
+
+        mailSender.send(message);
+
+        return "Registration link sent successfully";
+    }
+    public TeacherDTO registerTeacher(
+            TeacherRegistrationDTO dto) {
+
+        TeacherRegistrationToken tokenEntity =
+                registrationTokenRepository
+                        .findByToken(dto.getToken())
+                        .orElseThrow(() ->
+                                new RuntimeException("Invalid token"));
+
+        if (tokenEntity.isUsed()) {
+            throw new RuntimeException(
+                    "Registration already completed");
+        }
+
+        if (tokenEntity.getExpiryTime()
+                .isBefore(LocalDateTime.now())) {
+
+            throw new RuntimeException(
+                    "Registration link expired");
+        }
+
+        String teacherId =
+                idGenerator.generateId("TCH");
+
+        String rawPassword =
+                generateRandomPassword();
+
+        User user = User.builder()
+                .username(teacherId)
+                .email(dto.getEmail().trim())
+                .password(
+                        passwordEncoder.encode(rawPassword)
+                )
+                .role(Role.TEACHER)
+                .build();
+
+        userRepository.save(user);
+
+        Teacher teacher = Teacher.builder()
+                .teacherId(teacherId)
+                .teacherName(dto.getTeacherName())
+                .email(dto.getEmail().trim())
+                .phone(dto.getPhone())
+                .qualification(dto.getQualification())
+                .gender(dto.getGender())
+                .experience(dto.getExperience())
+                .address(dto.getAddress())
+                .subjectIds(dto.getSubjectIds())
+                .user(user)
+                .build();
+
+        teacherRepository.save(teacher);
+
+        sendCredentialsEmail(
+                dto.getEmail().trim(),
+                teacherId,
+                rawPassword
+        );
+
+        tokenEntity.setUsed(true);
+
+        registrationTokenRepository.save(tokenEntity);
+
+        return modelMapper.map(
+                teacher,
+                TeacherDTO.class
+        );
+    }
+    private void sendCredentialsEmail(
+            String email,
+            String username,
+            String password) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setTo(email);
+
+        message.setSubject(
+                "Teacher Account Created");
+
+        message.setText(
+                "Your account has been created.\n\n" +
+                        "Username : " + username + "\n" +
+                        "Password : " + password + "\n\n" +
+                        "Please login and change password."
+        );
+
+        mailSender.send(message);
+    }
+    private String generateRandomPassword() {
+
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 10);
+    }
 }
