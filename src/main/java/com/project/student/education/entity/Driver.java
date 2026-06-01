@@ -15,5 +15,6 @@ public class Driver {
 	private String experience;
 	private String address;
 	private String licenseNo;
+	private String phoneNo;
 
 }

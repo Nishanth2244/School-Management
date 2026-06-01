@@ -57,10 +57,16 @@ public class SuperAdminService {
 				.build();
 
 		User savedUser = userRepository.save(authUser);
+		
+		String generatedUsername = idGenerator.generateIdWithoutYear("ACS-ADM-");
+
 
 		Admin admin = new Admin();
+		admin.setId(generatedUsername);
 		admin.setEmail(adminCreateRequestDTO.getEmail());
 		admin.setFullName(adminCreateRequestDTO.getFullName());
+		admin.setAddress(adminCreateRequestDTO.getAddress());
+		admin.setExperience(adminCreateRequestDTO.getExperience());
 		admin.setPhone(adminCreateRequestDTO.getPhone());
 		admin.setUser(savedUser);
 

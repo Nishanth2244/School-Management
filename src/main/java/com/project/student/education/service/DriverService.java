@@ -94,6 +94,7 @@ public class DriverService {
 	    driver.setExperience(request.getExperience());
 	    driver.setFullName(savedDriver.getFullName());
 	    driver.setLicenseNo(request.getLicenseNumber());
+	    driver.setPhoneNo(request.getPhoneNo());
 		
 	    driverRepo.save(driver);
 
