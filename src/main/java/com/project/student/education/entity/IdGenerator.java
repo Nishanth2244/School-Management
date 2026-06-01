@@ -37,4 +37,21 @@ public class IdGenerator {
         idSequenceRepository.save(sequence);
         return prefix + year + String.format("%03d", nextNumber);
     }
+    
+    
+    public synchronized String generateIdWithoutYear(String prefix) {
+        String sequenceKey = prefix;
+        var sequence = idSequenceRepository.findById(sequenceKey)
+                .orElseGet(() -> IdSequence.builder()
+                        .prefix(sequenceKey)
+                        .lastNumber(0)
+                        .build());
+        
+        long nextNumber = sequence.getLastNumber() + 1;
+        sequence.setLastNumber(nextNumber);
+        idSequenceRepository.save(sequence);
+        
+        // Generates AS-PRI-001, AS-PRI-002, etc.
+        return prefix + String.format("%03d", nextNumber); 
+    }
 }

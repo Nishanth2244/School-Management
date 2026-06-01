@@ -20,4 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<String> findAdminUsernames();
     
 	Optional<User> findByEmail(String email);
+
+	boolean existsByEmail(String email);
+
+
 }
