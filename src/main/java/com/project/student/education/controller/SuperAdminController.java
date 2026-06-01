@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.student.education.DTO.AdminCreateRequestDTO;
+import com.project.student.education.DTO.InviteAdminRequest;
 import com.project.student.education.service.SuperAdminService;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,14 @@ public class SuperAdminController {
 		
 		superAdminService.addAdmin(adminCreateRequestDTO);
 		return "Admin Created Succesfully";
+	}
+	
+	
+	@PostMapping("/invitePrinciple")
+	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest) {
+		
+		superAdminService.sendInvite(inviteAdminRequest);
+		return "Invite link succesfully send to the: "+ inviteAdminRequest.getEmail();
 	}
 
 }
