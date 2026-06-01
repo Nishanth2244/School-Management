@@ -29,7 +29,7 @@ public class TeacherController {
 //    }
 
     @PostMapping("/register-link")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     public ResponseEntity<String> sendRegistrationLink(
             @RequestParam String email) {
 
@@ -40,10 +40,12 @@ public class TeacherController {
     }
     @PostMapping("/register")
     public ResponseEntity<TeacherDTO> registerTeacher(
+            @RequestParam String token,
             @RequestBody TeacherRegistrationDTO dto) {
 
         return ResponseEntity.ok(
-                teacherService.registerTeacher(dto));
+                teacherService.registerTeacher(token, dto)
+        );
     }
 
 

@@ -33,7 +33,8 @@ public class AuthUtil {
 
         return Jwts.builder()
                 .setSubject(user.getUsername()) // sub
-                .claim("role", user.getRole().name()) // ✅ role claim
+                .claim("role", user.getRole().name())
+                .claim("userId",user.getId())// ✅ role claim
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + accessExp))
                 .signWith(getKey(), SignatureAlgorithm.HS256)

@@ -74,15 +74,15 @@ public class SuperAdminService {
 
 	
 	
-	public void sendInvite(InviteAdminRequest inviteAdminRequest) {
+	public void sendInvite(Long userId,InviteAdminRequest inviteAdminRequest) {
 		
 		if (userRepository.existsByEmail(inviteAdminRequest.getEmail())) {
             throw new IllegalArgumentException("User with email " + inviteAdminRequest.getEmail() + " already exists in the system.");
         }
 		
-		User superAdmin = userRepository.findById(inviteAdminRequest.getSuperAdminId())
+		User superAdmin = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("SuperAdmin not found. Invalid ID."));
-		
+
 		
 		String secureToken = UUID.randomUUID().toString();
 		

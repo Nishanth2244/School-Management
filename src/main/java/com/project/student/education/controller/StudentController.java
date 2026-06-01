@@ -1,6 +1,8 @@
 package com.project.student.education.controller;
 
+import com.project.student.education.DTO.StudentBulkUploadDTO;
 import com.project.student.education.DTO.StudentDTO;
+import com.project.student.education.DTO.StudentProfileUpdateDTO;
 import com.project.student.education.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,26 @@ public class StudentController {
 
     @Autowired
     private StudentService studentService;
+
+    @PostMapping("/bulk-create")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<StudentDTO>> createStudents(
+            @RequestBody List<StudentBulkUploadDTO> students) {
+
+        return ResponseEntity.ok(
+                studentService.createStudents(students)
+        );
+    }
+    @PutMapping("/complete-profile")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<StudentDTO>
+    completeProfile(
+            @RequestBody StudentProfileUpdateDTO dto) {
+
+        return ResponseEntity.ok(
+                studentService.completeProfile(dto)
+        );
+    }
 
 
     // ADMIN + TEACHER

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StudentRepository extends JpaRepository<Student, String> {
@@ -38,4 +39,8 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     @Query("SELECT s.studentId FROM Student s")
     List<String> findAllStudentIds();
+
+    boolean existsByEmail(String email);
+
+    Optional<Student> findByUserId(long id);
 }

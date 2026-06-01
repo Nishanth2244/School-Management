@@ -1,5 +1,6 @@
 package com.project.student.education.controller;
 
+import com.project.student.education.config.SecurityUtil;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class SuperAdminController {
 	
 	private final SuperAdminService superAdminService;
+	private final SecurityUtil securityUtil;
 	
 	
 	@PostMapping("/addAdmin")
@@ -29,8 +31,8 @@ public class SuperAdminController {
 	
 	@PostMapping("/invitePrinciple")
 	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest) {
-		
-		superAdminService.sendInvite(inviteAdminRequest);
+		Long userId= securityUtil.getCurrentUserId();
+		superAdminService.sendInvite(userId,inviteAdminRequest);
 		return "Invite link succesfully send to the: "+ inviteAdminRequest.getEmail();
 	}
 

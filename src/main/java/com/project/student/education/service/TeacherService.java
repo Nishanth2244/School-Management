@@ -385,13 +385,13 @@ public class TeacherService {
         mailSender.send(message);
 
         return "Registration link sent successfully";
-    }
-    public TeacherDTO registerTeacher(
+    }public TeacherDTO registerTeacher(
+            String token,
             TeacherRegistrationDTO dto) {
 
         TeacherRegistrationToken tokenEntity =
                 registrationTokenRepository
-                        .findByToken(dto.getToken())
+                        .findByToken(token)
                         .orElseThrow(() ->
                                 new RuntimeException("Invalid token"));
 
@@ -400,22 +400,15 @@ public class TeacherService {
                     "Registration already completed");
         }
 
-        if (tokenEntity.getExpiryTime()
-                .isBefore(LocalDateTime.now())) {
+        String email = tokenEntity.getEmail();
 
-            throw new RuntimeException(
-                    "Registration link expired");
-        }
+        String teacherId = idGenerator.generateId("TCH");
 
-        String teacherId =
-                idGenerator.generateId("TCH");
-
-        String rawPassword =
-                generateRandomPassword();
+        String rawPassword = generateRandomPassword();
 
         User user = User.builder()
                 .username(teacherId)
-                .email(dto.getEmail().trim())
+                .email(email)
                 .password(
                         passwordEncoder.encode(rawPassword)
                 )
@@ -427,7 +420,7 @@ public class TeacherService {
         Teacher teacher = Teacher.builder()
                 .teacherId(teacherId)
                 .teacherName(dto.getTeacherName())
-                .email(dto.getEmail().trim())
+                .email(email)
                 .phone(dto.getPhone())
                 .qualification(dto.getQualification())
                 .gender(dto.getGender())
@@ -440,7 +433,7 @@ public class TeacherService {
         teacherRepository.save(teacher);
 
         sendCredentialsEmail(
-                dto.getEmail().trim(),
+                email,
                 teacherId,
                 rawPassword
         );

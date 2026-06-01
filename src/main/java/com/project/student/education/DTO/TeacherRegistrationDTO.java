@@ -9,7 +9,6 @@ import java.util.List;
 @Setter
 public class TeacherRegistrationDTO {
 
-    private String token;
 
     private String teacherName;
 

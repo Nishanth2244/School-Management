@@ -7,6 +7,5 @@ public class InviteAdminRequest {
 	
 	private String email;
 	private String fullName;
-	private Long superAdminId;
 
 }
