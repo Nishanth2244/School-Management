@@ -15,17 +15,15 @@ public class SecurityUtil {
 
     public User getCurrentUser() {
 
-        String username =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getName();
+        String username = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
 
         return userRepository
                 .findByUsername(username)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"));
+                .orElseThrow(() -> new RuntimeException(
+                        "User not found"));
     }
 
     public Long getCurrentUserId() {

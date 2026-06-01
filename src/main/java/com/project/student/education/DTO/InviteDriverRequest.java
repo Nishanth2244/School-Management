@@ -3,8 +3,8 @@ package com.project.student.education.DTO;
 import lombok.Data;
 
 @Data
-public class InviteAdminRequest {
-
+public class InviteDriverRequest {
+	
 	private String email;
 	private String fullName;
 
