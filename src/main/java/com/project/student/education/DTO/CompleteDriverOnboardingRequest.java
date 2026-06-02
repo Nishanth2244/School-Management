@@ -10,5 +10,6 @@ public class CompleteDriverOnboardingRequest {
 	private String address;
 	private String experience;
 	private String licenseNumber;
+	private String phoneNo;
 
 }

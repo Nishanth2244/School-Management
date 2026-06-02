@@ -4,6 +4,8 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+import com.project.student.education.enums.Role;
+
 
 @Data
 @Entity
@@ -36,6 +38,9 @@ public class AdminInvitation {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Enumerated(EnumType.STRING)
+    private Role intendedRole;
 
     public enum InvitationStatus {
         PENDING, USED, EXPIRED

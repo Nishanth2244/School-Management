@@ -8,6 +8,8 @@ public class AdminCreateRequestDTO {
 	private String userName;
 	private String password;
 	private String email;
+	private String experience;
+	private String address;
 	private String fullName;
 	private String phone;
 

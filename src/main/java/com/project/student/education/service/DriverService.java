@@ -53,7 +53,7 @@ public class DriverService {
 
 	    driverInvitationRepo.save(invitation);
 
-	    String inviteLink = "http://localhost:8080/driver-onboarding?token=" + secureToken;
+	    String inviteLink = "http://localhost:8080/modal?token=" + secureToken + "&role=driver";
 	    emailService.sendDriverInviteEmail(request.getEmail(), request.getFullName(), inviteLink);
 
 	    return "Invitation sent successfully to Driver: " + request.getEmail();
@@ -94,6 +94,7 @@ public class DriverService {
 	    driver.setExperience(request.getExperience());
 	    driver.setFullName(savedDriver.getFullName());
 	    driver.setLicenseNo(request.getLicenseNumber());
+	    driver.setPhoneNo(request.getPhoneNo());
 		
 	    driverRepo.save(driver);
 
