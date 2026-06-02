@@ -1,5 +1,6 @@
 package com.project.student.education.controller;
 
+import com.project.student.education.DTO.BulkEmailRequest;
 import com.project.student.education.DTO.ClassSectionMiniDTO;
 import com.project.student.education.DTO.TeacherDTO;
 import com.project.student.education.DTO.TeacherRegistrationDTO;
@@ -30,12 +31,24 @@ public class TeacherController {
 
     @PostMapping("/register-link/bulk")
     @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
-    public ResponseEntity<String> sendBulkRegistrationLinks(
-            @RequestBody List<String> emails) {
+    public ResponseEntity<?> sendBulkRegistrationLinks(
+            @RequestBody BulkEmailRequest request) {
 
-        teacherService.sendRegistrationLink(emails);
+        if (request.getEmails() == null || request.getEmails().isEmpty()) {
+            return ResponseEntity.badRequest().body("Email list cannot be empty");
+        }
 
-        return ResponseEntity.ok("Registration links sent successfully");
+        try {
+            teacherService.sendRegistrationLink(request.getEmails());
+
+            return ResponseEntity.ok("Registration links sent successfully to " + request.getEmails().size() + " teachers.");
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
     @PostMapping("/register")
     public ResponseEntity<TeacherDTO> registerTeacher(

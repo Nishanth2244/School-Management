@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SubjectDTO {
-    private String subjectId;
+//    private String subjectId;
     private String subjectName;
     private String subjectCode;
     private Boolean active;
