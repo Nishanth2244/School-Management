@@ -39,19 +39,12 @@ public class ClassSectionService {
 
         Teacher classTeacher = null;
 
-        if (dto.getClassTeacherId() != null) {
-
-            // ⭐ CHECK IF TEACHER IS ALREADY CLASS TEACHER OF ANOTHER SECTION
-            if (classSectionRepository.existsByClassTeacher_TeacherId(dto.getClassTeacherId())) {
-                throw new RuntimeException(
-                        "Teacher " + dto.getClassTeacherId() + " is already assigned as class teacher to another class section."
-                );
-            }
-
+        if (dto.getClassTeacherId() != null && !dto.getClassTeacherId().isBlank()) {
             classTeacher = teacherRepository.findById(dto.getClassTeacherId())
-                    .orElseThrow(() ->
-                            new RuntimeException("Teacher not found with ID: " + dto.getClassTeacherId()));
+                    .orElseThrow(() -> new RuntimeException("Teacher not found with ID: " + dto.getClassTeacherId()));
         }
+
+
 
         ClassSection classSection = ClassSection.builder()
                 .classSectionId(id)

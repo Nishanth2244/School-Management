@@ -346,46 +346,60 @@ public class TeacherService {
 
         mailSender.send(message);
     }
+    public void sendRegistrationLink(List<String> emails) {
 
-    public String sendRegistrationLink(String email) {
+        List<String> failedEmails = new ArrayList<>();
 
-        if (teacherRepository.existsByEmail(email)) {
-            throw new RuntimeException("Teacher already exists");
+        for (String email : emails) {
+
+            try {
+
+                if (teacherRepository.existsByEmail(email)) {
+                    failedEmails.add(email + " (Already Registered)");
+                    continue;
+                }
+
+                String token = UUID.randomUUID().toString();
+
+                TeacherRegistrationToken registrationToken =
+                        TeacherRegistrationToken.builder()
+                                .email(email)
+                                .token(token)
+                                .expiryTime(LocalDateTime.now().plusDays(2))
+                                .used(false)
+                                .build();
+
+                registrationTokenRepository.save(registrationToken);
+
+                String registrationLink =
+                        "http://localhost:8081/teacher-register?token=" + token;
+
+                SimpleMailMessage message = new SimpleMailMessage();
+
+                message.setTo(email);
+                message.setSubject("Teacher Registration");
+
+                message.setText(
+                        "Welcome to School ERP\n\n" +
+                                "Please complete your registration using the link below:\n\n" +
+                                registrationLink +
+                                "\n\nThis link expires in 48 hours."
+                );
+
+                mailSender.send(message);
+
+            } catch (Exception e) {
+                failedEmails.add(email + " (Failed)");
+            }
         }
 
-        String token = UUID.randomUUID().toString();
-
-        TeacherRegistrationToken registrationToken =
-                TeacherRegistrationToken.builder()
-                        .email(email)
-                        .token(token)
-                        .expiryTime(LocalDateTime.now().plusDays(2))
-                        .used(false)
-                        .build();
-
-        registrationTokenRepository.save(registrationToken);
-
-        String registrationLink =
-                "http://localhost:3000/teacher-register?token="
-                        + token;
-
-        SimpleMailMessage message = new SimpleMailMessage();
-
-        message.setTo(email);
-
-        message.setSubject("Teacher Registration");
-
-        message.setText(
-                "Welcome to School ERP\n\n" +
-                        "Please complete your registration using below link:\n\n" +
-                        registrationLink +
-                        "\n\nThis link expires in 48 hours."
-        );
-
-        mailSender.send(message);
-
-        return "Registration link sent successfully";
-    }public TeacherDTO registerTeacher(
+        if (!failedEmails.isEmpty()) {
+            throw new RuntimeException(
+                    "Failed for emails : " + String.join(", ", failedEmails)
+            );
+        }
+    }
+    public TeacherDTO registerTeacher(
             String token,
             TeacherRegistrationDTO dto) {
 

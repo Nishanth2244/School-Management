@@ -28,15 +28,14 @@ public class TeacherController {
 //        return new ResponseEntity<>(teacherService.addTeacher(dto), HttpStatus.CREATED);
 //    }
 
-    @PostMapping("/register-link")
+    @PostMapping("/register-link/bulk")
     @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
-    public ResponseEntity<String> sendRegistrationLink(
-            @RequestParam String email) {
+    public ResponseEntity<String> sendBulkRegistrationLinks(
+            @RequestBody List<String> emails) {
 
-        teacherService.sendRegistrationLink(email);
+        teacherService.sendRegistrationLink(emails);
 
-        return ResponseEntity.ok(
-                "Registration link sent successfully");
+        return ResponseEntity.ok("Registration links sent successfully");
     }
     @PostMapping("/register")
     public ResponseEntity<TeacherDTO> registerTeacher(
@@ -50,7 +49,7 @@ public class TeacherController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
     @GetMapping("/all")
     public ResponseEntity<List<TeacherDTO>> getAllTeachers() {
         return ResponseEntity.ok(teacherService.getAllTeachers());
@@ -58,7 +57,7 @@ public class TeacherController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
     @GetMapping("/{teacherId}")
     public ResponseEntity<TeacherDTO> getTeacherById(@PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.getTeacherById(teacherId));
@@ -76,7 +75,7 @@ public class TeacherController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @DeleteMapping("/{teacherId}")
     public ResponseEntity<String> deleteTeacher(@PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.deleteTeacher(teacherId));
@@ -95,7 +94,7 @@ public class TeacherController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @PutMapping("/assign/update/{classSectionId}/{teacherId}")
     public ResponseEntity<String> updateClassTeacher(
             @PathVariable String classSectionId,
@@ -114,7 +113,7 @@ public class TeacherController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
     @GetMapping("/count")
     public ResponseEntity<Long> countTeachers() {
         return ResponseEntity.ok(teacherService.getTeacherCount());

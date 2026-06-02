@@ -2,6 +2,8 @@ package com.project.student.education.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
 @Entity
@@ -19,6 +21,7 @@ public class TransportRoute {
     private String vehicleName;
     private String vehicleNumber;
 
-    private String driverName;
-    private String driverPhone;
+    @ManyToOne
+    @JoinColumn(name = "driver_id")
+    private Driver driver;
 }
