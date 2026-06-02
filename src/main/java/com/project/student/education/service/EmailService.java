@@ -47,7 +47,7 @@ public class EmailService {
 
 		SimpleMailMessage message = new SimpleMailMessage();
 		message.setTo(email);
-		message.setSubject("Principal Onboarding Form Invitation");
+		message.setSubject("Driver Onboarding Form Invitation");
 
 		String emailBody = String.format(
 				"Dear %s,%n%n" + "Greetings!%n%n" + "You have been invited to complete the Driver Onboarding Form. "
@@ -63,23 +63,5 @@ public class EmailService {
 
 	}
 
-	
-	public void sendAdminConfirmation(String email, String fullName, String username, String password) {
-
-		SimpleMailMessage message = new SimpleMailMessage();
-		message.setTo(email);
-		message.setSubject("Congratulations! Your Admin Account Has Been Created");
-
-		String emailBody = String.format("Dear %s,%n%n" + "Congratulations!%n%n"
-				+ "We are pleased to inform you that you have been successfully appointed as an Administrator in our system.%n%n"
-				+ "Your login credentials are as follows:%n%n" + "Username: %s%n" + "Password: %s%n%n"
-				+ "Please log in using the above credentials and change your password after your first login for security purposes.%n%n"
-				+ "If you experience any issues accessing your account or require assistance, please contact the support team.%n%n"
-				+ "We wish you success in your new role and look forward to your contributions.%n%n" + "Best Regards,%n"
-				+ "Administration Team", fullName, username, password);
-
-		message.setText(emailBody);
-		javaMailSender.send(message);
-	}
 
 }

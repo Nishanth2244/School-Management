@@ -101,8 +101,6 @@ public class SuperAdminService {
 		newUser.setFullName(invitation.getFullName());
 		newUser.setPassword(passwordEncoder.encode(request.getPassword()));
 		newUser.setRole(assignedRole);
-		// newUser.setExperience(request.getExperience());
-		// newUser.setAddress(request.getAddress());
 		newUser.setApprovalStatus(true);
 		newUser.setIsAvailable(true);
 
