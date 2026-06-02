@@ -86,39 +86,6 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
 
                 .authorizeHttpRequests(auth -> auth
-
-                        // CORS Preflight should always pass
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-//
-//                        // PUBLIC ENDPOINTS (NO AUTH REQUIRED)
-//                        .requestMatchers(
-//                                "/api/student/auth/login",
-//                                "/api/student/auth/signup",
-//                                "/api/student/auth/refresh-token",
-//                                "/api/student/auth/forgot-password",
-//                                "/api/student/auth/reset-password",
-//                                "/api/student/admission",
-//                                "/api/student/admissions",
-//                                "/swagger-ui/**",
-//                                "/v3/api-docs/**",
-//                                "/actuator/**",
-//                                "/api/student/notifications/**",
-//                                "/images/**",
-//                                "/ai/**",
-//                                "/apisyniq/**",
-//                                "/api-syniq/**",
-//                                "/syniq/**",
-//                                "/index.html",
-//                                "/static/**",
-//                                "/public/**",
-//                                "/webjars/**",
-//                                "/RepresentUI.html"
-//                        ).permitAll()
-//
-//                        // Authenticated Endpoints
-//                        .requestMatchers("/api/student/auth/change-password").authenticated()
-//
-//                        .anyRequest().authenticated()
                 		
                 		.anyRequest().permitAll()
                 )
