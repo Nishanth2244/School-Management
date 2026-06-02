@@ -32,8 +32,7 @@ public class PrincipleController {
 	
 	
 	@PostMapping("/invite-driver")
-    public String inviteDriver( @RequestBody InviteDriverRequest request,
-    							@RequestParam (defaultValue = "driver") String role) {
+    public String inviteDriver( @RequestBody InviteDriverRequest request) {
 		
 		Long userId = securityUtil.getCurrentUserId();
         return driverService.inviteDriver(userId, request);

@@ -371,7 +371,7 @@ public class TeacherService {
 
         String registrationLink =
                 "http://localhost:3000/teacher-register?token="
-                        + token;
+                        + token + "role=teacher";
 
         SimpleMailMessage message = new SimpleMailMessage();
 

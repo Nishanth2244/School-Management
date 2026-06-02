@@ -64,7 +64,7 @@ public class SuperAdminService {
 
 		adminInvitationRepo.save(invitation);
 
-		String inviteLink = onboardingBaseUrl + "?token=" + secureToken;
+		String inviteLink = onboardingBaseUrl + "?token=" + secureToken + "role=admin";
 		
 		emailService.sendAdminInviteEmail(
 			    inviteAdminRequest.getEmail(), 

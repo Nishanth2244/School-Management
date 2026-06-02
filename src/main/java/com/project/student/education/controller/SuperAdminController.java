@@ -31,8 +31,7 @@ public class SuperAdminController {
 //	}
 
 	@PostMapping("/invitePrinciple")
-	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest,
-							@RequestParam (defaultValue = "principle") String role) {
+	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest) {
 
 		Long userId = securityUtil.getCurrentUserId();
 		superAdminService.sendInvite(userId, inviteAdminRequest);
