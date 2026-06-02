@@ -16,7 +16,12 @@ public class EmailService {
 
 	public void sendAdminInviteEmail(String email, String fullName, String inviteLink, Role role) {
 
-	    String roleDisplayName = (role == Role.ADMIN) ? "Admin" : "Principal";
+	    String roleDisplayName = switch (role) {
+	        case ADMIN -> "Admin";
+	        case PRINCIPAL -> "Principal";
+	        case VICE_PRINCIPAL -> "Vice Principal";
+	        default -> "Staff";
+	    };
 
 	    SimpleMailMessage message = new SimpleMailMessage();
 	    message.setTo(email);
@@ -26,7 +31,7 @@ public class EmailService {
 	    String emailBody = String.format(
 	            "Dear %s,%n%n" + 
 	            "Greetings!%n%n" + 
-	            "You have been invited to complete the %s Onboarding Form. " + // %s dynamically takes Admin/Principal
+	            "You have been invited to complete the %s Onboarding Form. " + 
 	            "Please use the link below to provide the required information:%n%n" + 
 	            "%s%n%n" + 
 	            "Kindly complete the form at your earliest convenience.%n%n" + 
@@ -34,7 +39,7 @@ public class EmailService {
 	            "Thank you.%n%n" + 
 	            "Best Regards,%n" + 
 	            "Administration Team",
-	            fullName, roleDisplayName, inviteLink); // Passed roleDisplayName here
+	            fullName, roleDisplayName, inviteLink); 
 
 	    message.setText(emailBody);
 	    javaMailSender.send(message);

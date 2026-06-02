@@ -22,7 +22,7 @@ public class ClassSectionController {
         return ResponseEntity.ok(classSectionService.createClassSection(dto));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
     @GetMapping("/class-sections")
     public ResponseEntity<List<ClassSectionDTO>> getAllClassSections() {
         return ResponseEntity.ok(classSectionService.getAllClassSections());

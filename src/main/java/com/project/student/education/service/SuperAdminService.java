@@ -92,7 +92,13 @@ public class SuperAdminService {
 
 		Role assignedRole = invitation.getIntendedRole();
 		
-		String prefix = (assignedRole == Role.ADMIN) ? "ACS-ADM-" : "ACS-PRI-";
+		String prefix = switch (assignedRole) {
+	    case ADMIN -> "ACS-ADM-";
+	    case PRINCIPAL -> "ACS-PRI-";
+	    case VICE_PRINCIPAL -> "ACS-VPR-"; 
+	    default -> "ACS-STF-";
+		};
+		
 		String generatedUsername = idGenerator.generateIdWithoutYear(prefix);
 		
 		User newUser = new User();
