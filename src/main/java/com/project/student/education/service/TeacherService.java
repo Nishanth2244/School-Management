@@ -8,6 +8,8 @@ import com.project.student.education.entity.*;
 import com.project.student.education.enums.Role;
 import com.project.student.education.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -21,6 +23,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeacherService {
@@ -405,6 +409,7 @@ public class TeacherService {
         String teacherId = idGenerator.generateId("TCH");
 
         String rawPassword = generateRandomPassword();
+        
 
         User user = User.builder()
                 .username(teacherId)

@@ -71,7 +71,9 @@ public class SuperAdminService {
 		admin.setUser(savedUser);
 
 		Admin savedAdmin = adminRepo.save(admin);
-
+		
+		emailService.sendAdminConfirmation(savedAdmin.getEmail(), savedAdmin.getFullName(), generatedUsername, adminCreateRequestDTO.getPassword());
+		
 		log.info("✅ Admin created successfully: {}", adminCreateRequestDTO.getUserName());
 	}
 

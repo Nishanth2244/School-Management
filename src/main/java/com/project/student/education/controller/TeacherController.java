@@ -31,7 +31,8 @@ public class TeacherController {
     @PostMapping("/register-link")
     @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     public ResponseEntity<String> sendRegistrationLink(
-            @RequestParam String email) {
+            @RequestParam String email,
+            @RequestParam (defaultValue = "teacher") String role) {
 
         teacherService.sendRegistrationLink(email);
 

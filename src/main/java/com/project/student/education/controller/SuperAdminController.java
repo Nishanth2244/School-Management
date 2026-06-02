@@ -4,6 +4,7 @@ import com.project.student.education.config.SecurityUtil;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.student.education.DTO.AdminCreateRequestDTO;
@@ -30,7 +31,8 @@ public class SuperAdminController {
 	}
 
 	@PostMapping("/invitePrinciple")
-	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest) {
+	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest,
+							@RequestParam (defaultValue = "principle") String role) {
 
 		Long userId = securityUtil.getCurrentUserId();
 		superAdminService.sendInvite(userId, inviteAdminRequest);
