@@ -38,48 +38,10 @@ public class SuperAdminService {
 	@Value("${app.frontend.onboarding-url}")
 	private String onboardingBaseUrl;
 
-	public void addAdmin(AdminCreateRequestDTO adminCreateRequestDTO) {
-
-		if (userRepository.findByUsername(adminCreateRequestDTO.getUserName()).isPresent()) {
-			throw new IllegalArgumentException("Username already exists!");
-		}
-		if (userRepository.findByEmail(adminCreateRequestDTO.getEmail()).isPresent()) {
-			throw new IllegalArgumentException("Email already exists!");
-		}
-
-		User authUser = User.builder()
-				.username(adminCreateRequestDTO.getUserName())
-				.password(passwordEncoder.encode(adminCreateRequestDTO.getPassword()))
-				.email(adminCreateRequestDTO.getEmail())
-				.role(Role.ADMIN)
-				.approvalStatus(true)
-				.isAvailable(true)
-				.build();
-
-		User savedUser = userRepository.save(authUser);
-		
-		String generatedUsername = idGenerator.generateIdWithoutYear("ACS-ADM-");
-
-
-		Admin admin = new Admin();
-		admin.setId(generatedUsername);
-		admin.setEmail(adminCreateRequestDTO.getEmail());
-		admin.setFullName(adminCreateRequestDTO.getFullName());
-		admin.setAddress(adminCreateRequestDTO.getAddress());
-		admin.setExperience(adminCreateRequestDTO.getExperience());
-		admin.setPhone(adminCreateRequestDTO.getPhone());
-		admin.setUser(savedUser);
-
-		Admin savedAdmin = adminRepo.save(admin);
-		
-		emailService.sendAdminConfirmation(savedAdmin.getEmail(), savedAdmin.getFullName(), generatedUsername, adminCreateRequestDTO.getPassword());
-		
-		log.info("✅ Admin created successfully: {}", adminCreateRequestDTO.getUserName());
-	}
 
 	public void sendInvite(Long userId, InviteAdminRequest inviteAdminRequest) {
-
-		if (userRepository.existsByEmail(inviteAdminRequest.getEmail())) {
+		// Validations
+		if (userRepository.findByEmail(inviteAdminRequest.getEmail()).isPresent()) {
 			throw new IllegalArgumentException(
 					"User with email " + inviteAdminRequest.getEmail() + " already exists in the system.");
 		}
@@ -93,20 +55,23 @@ public class SuperAdminService {
 		invitation.setEmail(inviteAdminRequest.getEmail());
 		invitation.setFullName(inviteAdminRequest.getFullName());
 		invitation.setToken(secureToken);
+		invitation.setIntendedRole(inviteAdminRequest.getRole());
 		invitation.setStatus(AdminInvitation.InvitationStatus.PENDING);
 		invitation.setInvitedBy(superAdmin);
 		invitation.setExpiresAt(LocalDateTime.now().plusHours(24));
 
-		log.info(secureToken);
+		log.info("DEV ONLY - Token: " + secureToken);
 
 		adminInvitationRepo.save(invitation);
 
 		String inviteLink = onboardingBaseUrl + "?token=" + secureToken;
-
-		// Ensure this method throws an exception if the email fails,
-		// so the @Transactional rolls back the DB save.
-		emailService.sendAdminInviteEmail(inviteAdminRequest.getEmail(), inviteAdminRequest.getFullName(), inviteLink);
-
+		
+		emailService.sendAdminInviteEmail(
+			    inviteAdminRequest.getEmail(), 
+			    inviteAdminRequest.getFullName(), 
+			    inviteLink, 
+			    inviteAdminRequest.getRole()
+			);
 	}
 
 	public String completeOnboarding(CompleteOnboardingRequestDTO request, String token) {
@@ -114,28 +79,28 @@ public class SuperAdminService {
 		AdminInvitation invitation = adminInvitationRepo.findByToken(token);
 
 		if (invitation == null) {
-			throw new ResourceAccessException("Token Not Found exception");
+			throw new ResourceAccessException("Invalid Token.");
 		}
-
 		if (invitation.getStatus() != AdminInvitation.InvitationStatus.PENDING) {
 			throw new IllegalArgumentException("This token has already been used or expired.");
 		}
-
 		if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
 			invitation.setStatus(AdminInvitation.InvitationStatus.EXPIRED);
 			adminInvitationRepo.save(invitation);
-			throw new IllegalArgumentException(
-					"The onboarding link has expired. Please contact SuperAdmin for a new invite.");
+			throw new IllegalArgumentException("The onboarding link has expired.");
 		}
 
-		String generatedUsername = idGenerator.generateIdWithoutYear("ACS-PRI-");
-
+		Role assignedRole = invitation.getIntendedRole();
+		
+		String prefix = (assignedRole == Role.ADMIN) ? "ACS-ADM-" : "ACS-PRI-";
+		String generatedUsername = idGenerator.generateIdWithoutYear(prefix);
+		
 		User newUser = new User();
 		newUser.setUsername(generatedUsername);
 		newUser.setEmail(invitation.getEmail());
 		newUser.setFullName(invitation.getFullName());
 		newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-		newUser.setRole(Role.PRINCIPAL);
+		newUser.setRole(assignedRole);
 		// newUser.setExperience(request.getExperience());
 		// newUser.setAddress(request.getAddress());
 		newUser.setApprovalStatus(true);

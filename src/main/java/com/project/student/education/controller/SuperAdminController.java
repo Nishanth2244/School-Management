@@ -23,12 +23,12 @@ public class SuperAdminController {
 	private final SuperAdminService superAdminService;
 	private final SecurityUtil securityUtil;
 
-	@PostMapping("/addAdmin")
-	public String createAdmin(@RequestBody AdminCreateRequestDTO adminCreateRequestDTO) {
-
-		superAdminService.addAdmin(adminCreateRequestDTO);
-		return "Admin Created Succesfully";
-	}
+//	@PostMapping("/addAdmin")
+//	public String createAdmin(@RequestBody AdminCreateRequestDTO adminCreateRequestDTO) {
+//
+//		superAdminService.addAdmin(adminCreateRequestDTO);
+//		return "Admin Created Succesfully";
+//	}
 
 	@PostMapping("/invitePrinciple")
 	public String inviteAdmin(@RequestBody InviteAdminRequest inviteAdminRequest,
