@@ -5,6 +5,7 @@ import com.project.student.education.DTO.ComprehensiveScheduleRequest;
 import com.project.student.education.DTO.StudentTransportDTO;
 import com.project.student.education.DTO.TransportAssignRequest;
 import com.project.student.education.DTO.TransportRouteRequest;
+import com.project.student.education.config.SecurityUtil;
 import com.project.student.education.entity.TransportRoute;
 import com.project.student.education.service.TransportService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 public class TransportController {
 
     private final TransportService transportService;
+    private final SecurityUtil  securityUtil;
 
 
     // ADMIN ONLY — Create route
@@ -93,5 +95,13 @@ public class TransportController {
 
         return ResponseEntity.ok(transportService.assignDriverToRoute(routeId, driverId));
     }
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN', 'DRIVER')")
+    @GetMapping("/driver/my-routes")
+    public ResponseEntity<List<TransportRoute>> getMyRoutes() {
 
+        // Securely fetch the driver's ID from the JWT token
+        String currentDriverId = securityUtil.getCurrentUsername();
+
+        return ResponseEntity.ok(transportService.getRoutesByDriver(currentDriverId));
+    }
 }

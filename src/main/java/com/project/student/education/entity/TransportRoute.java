@@ -1,5 +1,6 @@
 package com.project.student.education.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -23,5 +24,7 @@ public class TransportRoute {
 
     @ManyToOne
     @JoinColumn(name = "driver_id")
+    @JsonIgnore
+
     private Driver driver;
 }

@@ -11,18 +11,20 @@ import lombok.Data;
 @Data
 @Entity
 public class Driver {
-
+	
 	@Id
 	private String id;
-
+	
 	private String fullName;
 	private String experience;
 	private String address;
 	private String licenseNo;
-	private String phoneNo;
 
+	private String phoneNo;
+	
 	@OneToOne(cascade = CascadeType.ALL)
-	@JoinColumn(name = "user_id", referencedColumnName = "id")
-	private User user;
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
 
 }

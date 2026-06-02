@@ -143,7 +143,7 @@ public class TransportService {
         String dName = (st.getRoute() != null && st.getRoute().getDriver() != null)
                 ? st.getRoute().getDriver().getFullName() : null;
         String dPhone = (st.getRoute() != null && st.getRoute().getDriver() != null)
-                ? st.getRoute().getDriver().getPhone() : null;
+                ? st.getRoute().getDriver().getPhoneNo() : null;
 
         return StudentTransportDTO.builder()
                 .studentId(st.getStudentId())
@@ -168,5 +168,15 @@ public class TransportService {
         route.setDriver(driver); // Attach the driver
 
         return transportRouteRepository.save(route);
+    }
+
+    public List<TransportRoute> getRoutesByDriver(String driverId) {
+        List<TransportRoute> assignedRoutes = transportRouteRepository.findByDriverId(driverId);
+
+        if (assignedRoutes.isEmpty()) {
+            throw new RuntimeException("No routes assigned to this driver yet.");
+        }
+
+        return assignedRoutes;
     }
 }
