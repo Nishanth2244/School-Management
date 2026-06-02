@@ -370,7 +370,7 @@ public class TeacherService {
         registrationTokenRepository.save(registrationToken);
 
         String registrationLink =
-                "http://localhost:3000/teacher-register?token="
+                "http://localhost:3000/modal?token="
                         + token + "&role=teacher";
 
         SimpleMailMessage message = new SimpleMailMessage();
