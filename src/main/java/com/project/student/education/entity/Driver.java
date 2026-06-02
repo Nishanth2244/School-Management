@@ -19,10 +19,12 @@ public class Driver {
 	private String experience;
 	private String address;
 	private String licenseNo;
+
 	private String phoneNo;
 	
 	@OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+
 
 }
