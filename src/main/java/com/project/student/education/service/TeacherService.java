@@ -349,53 +349,61 @@ public class TeacherService {
 
         public void sendRegistrationLink(List<String> emails) {
 
+                // 1. Upfront Validation: Check if ANY emails are already registered
+                List<String> alreadyRegistered = new ArrayList<>();
+                for (String email : emails) {
+                        // Check both teacher and user tables to be safe
+                        if (teacherRepository.existsByEmail(email) || userRepository.existsByEmail(email)) {
+                                alreadyRegistered.add(email);
+                        }
+                }
+
+                // If any emails exist, throw an exception immediately BEFORE sending any emails
+                if (!alreadyRegistered.isEmpty()) {
+                        throw new IllegalArgumentException("Teachers with the following emails are already registered: "
+                                + String.join(", ", alreadyRegistered));
+                }
+
+                // 2. Process and send emails
                 List<String> failedEmails = new ArrayList<>();
 
                 for (String email : emails) {
-
                         try {
-
-                                if (teacherRepository.existsByEmail(email)) {
-                                        failedEmails.add(email + " (Already Registered)");
-                                        continue;
-                                }
-
                                 String token = UUID.randomUUID().toString();
 
                                 TeacherRegistrationToken registrationToken = TeacherRegistrationToken.builder()
-                                                .email(email)
-                                                .token(token)
-                                                .expiryTime(LocalDateTime.now().plusDays(2))
-                                                .used(false)
-                                                .build();
+                                        .email(email)
+                                        .token(token)
+                                        .expiryTime(LocalDateTime.now().plusDays(2))
+                                        .used(false)
+                                        .build();
 
                                 registrationTokenRepository.save(registrationToken);
 
                                 String registrationLink = "http://localhost:8081/modal?token="
-                                                + token + "&role=teacher";
+                                        + token + "&role=teacher";
 
                                 SimpleMailMessage message = new SimpleMailMessage();
-
                                 message.setTo(email);
                                 message.setSubject("Teacher Registration");
-
                                 message.setText(
-                                                "Welcome to School ERP\n\n" +
-                                                                "Please complete your registration using the link below:\n\n"
-                                                                +
-                                                                registrationLink +
-                                                                "\n\nThis link expires in 48 hours.");
+                                        "Welcome to School ERP\n\n" +
+                                                "Please complete your registration using the link below:\n\n" +
+                                                registrationLink +
+                                                "\n\nThis link expires in 48 hours."
+                                );
 
                                 mailSender.send(message);
 
                         } catch (Exception e) {
-                                failedEmails.add(email + " (Failed)");
+                                log.error("Error sending email to {}: {}", email, e.getMessage());
+                                failedEmails.add(email);
                         }
                 }
 
+                // 3. Handle actual mail sending failures (e.g., SMTP issues)
                 if (!failedEmails.isEmpty()) {
-                        throw new RuntimeException(
-                                        "Failed for emails : " + String.join(", ", failedEmails));
+                        throw new RuntimeException("Failed to send emails to: " + String.join(", ", failedEmails));
                 }
         }
 

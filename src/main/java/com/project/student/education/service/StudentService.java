@@ -244,7 +244,7 @@ public class StudentService {
 
     private SubjectDTO convertSubjectToDTO(Subject subject) {
         SubjectDTO dto = new SubjectDTO();
-        dto.setSubjectId(subject.getSubjectId());
+//        dto.setSubjectId(subject.getSubjectId());
         dto.setSubjectName(subject.getSubjectName());
         return dto;
     }
@@ -576,22 +576,33 @@ public class StudentService {
 
 
     @Transactional
-    public List<StudentDTO> createStudents(
-            List<StudentBulkUploadDTO> students) {
+    public List<StudentDTO> createStudents(List<StudentBulkUploadDTO> students) {
 
         List<StudentDTO> responseList = new ArrayList<>();
 
         for (StudentBulkUploadDTO dto : students) {
 
+            // Skip if student email already exists
             if (studentRepository.existsByEmail(dto.getEmail())) {
                 continue;
             }
 
-            String studentId =
-                    idGenerator.generateId("STU");
+            // 1. 🔥 Lookup the Class Section based on the DTO data
+            ClassSection classSection = null;
+            if (dto.getGrade() != null && dto.getSection() != null && dto.getAcademicYear() != null) {
+                classSection = classSectionRepository.findByClassNameAndSectionAndAcademicYear(
+                        dto.getGrade(),
+                        dto.getSection(),
+                        dto.getAcademicYear()
+                ).orElseThrow(() -> new RuntimeException(
+                        "Upload failed: Class " + dto.getGrade() + " Section " + dto.getSection() +
+                                " does not exist for Academic Year " + dto.getAcademicYear() +
+                                ". Please create the class first."
+                ));
+            }
 
-            String rawPassword =
-                    generateRandomPassword();
+            String studentId = idGenerator.generateId("STU");
+            String rawPassword = generateRandomPassword();
 
             User user = User.builder()
                     .username(studentId)
@@ -602,6 +613,7 @@ public class StudentService {
 
             userRepository.save(user);
 
+            // 2. 🔥 Assign the fetched classSection to the Student Builder
             Student student = Student.builder()
                     .studentId(studentId)
                     .fullName(dto.getFullName())
@@ -614,6 +626,7 @@ public class StudentService {
                     .totalFee(dto.getTotalFee())
                     .active(true)
                     .user(user)
+                    .classSection(classSection)
                     .build();
 
             studentRepository.save(student);
@@ -624,9 +637,7 @@ public class StudentService {
                     rawPassword
             );
 
-            StudentDTO response =
-                    convertToDTO(student);
-
+            StudentDTO response = convertToDTO(student);
             response.setGeneratedPassword(rawPassword);
 
             responseList.add(response);
