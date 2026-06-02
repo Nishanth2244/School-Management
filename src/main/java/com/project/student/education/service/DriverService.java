@@ -53,7 +53,7 @@ public class DriverService {
 
 	    driverInvitationRepo.save(invitation);
 
-	    String inviteLink = "http://localhost:8080/driver-onboarding?token=" + secureToken + "role=driver";
+	    String inviteLink = "http://localhost:8080/driver-onboarding?token=" + secureToken + "&role=driver";
 	    emailService.sendDriverInviteEmail(request.getEmail(), request.getFullName(), inviteLink);
 
 	    return "Invitation sent successfully to Driver: " + request.getEmail();
