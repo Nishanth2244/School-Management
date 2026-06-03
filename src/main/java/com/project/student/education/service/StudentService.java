@@ -3,8 +3,13 @@ package com.project.student.education.service;
 import com.project.student.education.DTO.*;
 import com.project.student.education.entity.*;
 import com.project.student.education.enums.FeeStatus;
+import com.project.student.education.enums.Role;
 import com.project.student.education.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +32,10 @@ public class StudentService {
     private StudentFeeRepository studentFeeRepository;
     @Autowired
     private ClassSectionRepository classSectionRepository;
+    @Autowired
+    private JavaMailSender mailSender;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private SubjectRepository subjectRepository;
@@ -235,7 +244,7 @@ public class StudentService {
 
     private SubjectDTO convertSubjectToDTO(Subject subject) {
         SubjectDTO dto = new SubjectDTO();
-        dto.setSubjectId(subject.getSubjectId());
+//        dto.setSubjectId(subject.getSubjectId());
         dto.setSubjectName(subject.getSubjectName());
         return dto;
     }
@@ -562,5 +571,194 @@ public class StudentService {
 
         return java.time.LocalTime.parse(time)
                 .format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+    }
+
+
+
+    @Transactional
+    public List<StudentDTO> createStudents(List<StudentBulkUploadDTO> students) {
+
+        List<StudentDTO> responseList = new ArrayList<>();
+
+        for (StudentBulkUploadDTO dto : students) {
+
+            // Skip if student email already exists
+            if (studentRepository.existsByEmail(dto.getEmail())) {
+                continue;
+            }
+
+            // 1. 🔥 Lookup the Class Section based on the DTO data
+            ClassSection classSection = null;
+            if (dto.getGrade() != null && dto.getSection() != null && dto.getAcademicYear() != null) {
+                classSection = classSectionRepository.findByClassNameAndSectionAndAcademicYear(
+                        dto.getGrade(),
+                        dto.getSection(),
+                        dto.getAcademicYear()
+                ).orElseThrow(() -> new RuntimeException(
+                        "Upload failed: Class " + dto.getGrade() + " Section " + dto.getSection() +
+                                " does not exist for Academic Year " + dto.getAcademicYear() +
+                                ". Please create the class first."
+                ));
+            }
+
+            String studentId = idGenerator.generateId("STU");
+            String rawPassword = generateRandomPassword();
+
+            User user = User.builder()
+                    .username(studentId)
+                    .password(passwordEncoder.encode(rawPassword))
+                    .email(dto.getEmail())
+                    .role(Role.STUDENT)
+                    .build();
+
+            userRepository.save(user);
+
+            // 2. 🔥 Assign the fetched classSection to the Student Builder
+            Student student = Student.builder()
+                    .studentId(studentId)
+                    .fullName(dto.getFullName())
+                    .email(dto.getEmail())
+                    .grade(dto.getGrade())
+                    .section(dto.getSection())
+                    .academicYear(dto.getAcademicYear())
+                    .fatherName(dto.getFatherName())
+                    .fatherContact(dto.getFatherContact())
+                    .totalFee(dto.getTotalFee())
+                    .active(true)
+                    .user(user)
+                    .classSection(classSection)
+                    .build();
+
+            studentRepository.save(student);
+
+            sendStudentCredentials(
+                    dto.getEmail(),
+                    studentId,
+                    rawPassword
+            );
+
+            StudentDTO response = convertToDTO(student);
+            response.setGeneratedPassword(rawPassword);
+
+            responseList.add(response);
+        }
+
+        return responseList;
+    }
+    private String generateRandomPassword() {
+
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 10);
+    }
+    private void sendStudentCredentials(
+            String email,
+            String username,
+            String password) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setTo(email);
+
+        message.setSubject(
+                "Student Login Credentials");
+
+        message.setText(
+                "Dear Student,\n\n" +
+                        "Your account has been created.\n\n" +
+                        "Username : " + username + "\n" +
+                        "Password : " + password + "\n\n" +
+                        "Please login and update your profile.\n\n" +
+                        "Regards,\n" +
+                        "School Administration"
+        );
+
+        mailSender.send(message);
+    }
+
+    @Transactional
+    public StudentDTO completeProfile(
+            StudentProfileUpdateDTO dto) {
+
+        String username =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getName();
+
+        User user =
+                userRepository
+                        .findByUsername(username)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "User not found"));
+
+        Student student =
+                studentRepository
+                        .findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Student not found"));
+
+        student.setDateOfBirth(
+                dto.getDateOfBirth());
+
+        student.setGender(
+                dto.getGender());
+
+        student.setBloodGroup(
+                dto.getBloodGroup());
+
+        student.setNationality(
+                dto.getNationality());
+
+        student.setReligion(
+                dto.getReligion());
+
+        student.setCategory(
+                dto.getCategory());
+
+        student.setAadhaarNumber(
+                dto.getAadhaarNumber());
+
+        student.setAddress(
+                dto.getAddress());
+
+        student.setCity(
+                dto.getCity());
+
+        student.setState(
+                dto.getState());
+
+        student.setPincode(
+                dto.getPincode());
+
+        student.setContactNumber(
+                dto.getContactNumber());
+
+        student.setMotherName(
+                dto.getMotherName());
+
+        student.setMotherContact(
+                dto.getMotherContact());
+
+        student.setGuardianName(
+                dto.getGuardianName());
+
+        student.setGuardianContact(
+                dto.getGuardianContact());
+
+        student.setEmergencyContactName(
+                dto.getEmergencyContactName());
+
+        student.setEmergencyContactNumber(
+                dto.getEmergencyContactNumber());
+
+        Student saved =
+                studentRepository.save(student);
+
+        return convertToDTO(saved);
     }
 }

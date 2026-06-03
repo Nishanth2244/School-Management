@@ -28,6 +28,8 @@ public class User  implements UserDetails {
     private String username;
 
     private String password;
+    
+    private String fullName;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -36,7 +38,6 @@ public class User  implements UserDetails {
     
     private Boolean approvalStatus;
     private Boolean isAvailable;
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

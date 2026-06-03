@@ -1,7 +1,9 @@
 package com.project.student.education.controller;
 
+import com.project.student.education.DTO.BulkEmailRequest;
 import com.project.student.education.DTO.ClassSectionMiniDTO;
 import com.project.student.education.DTO.TeacherDTO;
+import com.project.student.education.DTO.TeacherRegistrationDTO;
 import com.project.student.education.service.TeacherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +22,47 @@ public class TeacherController {
     private TeacherService teacherService;
 
 
-    // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/add")
-    public ResponseEntity<TeacherDTO> addTeacher(@RequestBody TeacherDTO dto) {
-        return new ResponseEntity<>(teacherService.addTeacher(dto), HttpStatus.CREATED);
+//    // ADMIN ONLY
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @PostMapping("/add")
+//    public ResponseEntity<TeacherDTO> addTeacher(@RequestBody TeacherDTO dto) {
+//        return new ResponseEntity<>(teacherService.addTeacher(dto), HttpStatus.CREATED);
+//    }
+
+    @PostMapping("/register-link/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
+    public ResponseEntity<?> sendBulkRegistrationLinks(
+            @RequestBody BulkEmailRequest request) {
+
+        if (request.getEmails() == null || request.getEmails().isEmpty()) {
+            return ResponseEntity.badRequest().body("Email list cannot be empty");
+        }
+
+        try {
+            teacherService.sendRegistrationLink(request.getEmails());
+
+            return ResponseEntity.ok("Registration links sent successfully to " + request.getEmails().size() + " teachers.");
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+    @PostMapping("/register")
+    public ResponseEntity<TeacherDTO> registerTeacher(
+            @RequestParam String token,
+            @RequestBody TeacherRegistrationDTO dto) {
+
+        return ResponseEntity.ok(
+                teacherService.registerTeacher(token, dto)
+        );
     }
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
     @GetMapping("/all")
     public ResponseEntity<List<TeacherDTO>> getAllTeachers() {
         return ResponseEntity.ok(teacherService.getAllTeachers());
@@ -37,7 +70,7 @@ public class TeacherController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
     @GetMapping("/{teacherId}")
     public ResponseEntity<TeacherDTO> getTeacherById(@PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.getTeacherById(teacherId));
@@ -55,7 +88,7 @@ public class TeacherController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @DeleteMapping("/{teacherId}")
     public ResponseEntity<String> deleteTeacher(@PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.deleteTeacher(teacherId));
@@ -74,7 +107,7 @@ public class TeacherController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @PutMapping("/assign/update/{classSectionId}/{teacherId}")
     public ResponseEntity<String> updateClassTeacher(
             @PathVariable String classSectionId,
@@ -93,7 +126,7 @@ public class TeacherController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
     @GetMapping("/count")
     public ResponseEntity<Long> countTeachers() {
         return ResponseEntity.ok(teacherService.getTeacherCount());

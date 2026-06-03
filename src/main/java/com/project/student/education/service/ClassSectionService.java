@@ -1,6 +1,7 @@
 package com.project.student.education.service;
 
 import com.project.student.education.DTO.ClassSectionDTO;
+import com.project.student.education.DTO.ClassSectionRequest;
 import com.project.student.education.DTO.StudentDTO;
 import com.project.student.education.entity.*;
 import com.project.student.education.repository.*;
@@ -23,13 +24,10 @@ public class ClassSectionService {
     private final ClassSubjectMappingRepository classSubjectMappingRepository;
     private final SubjectRepository subjectRepository;
 
-    // ============================
-    // CREATE CLASS SECTION
-    // ============================
-    public ClassSectionDTO createClassSection(ClassSectionDTO dto) {
+    public ClassSectionDTO createClassSection(ClassSectionRequest request) {
 
         classSectionRepository.findByClassNameAndSectionAndAcademicYear(
-                        dto.getClassName(), dto.getSection(), dto.getAcademicYear()
+                        request.getClassName(), request.getSection(), request.getAcademicYear()
                 )
                 .ifPresent(existing -> {
                     throw new RuntimeException("Class section already exists for this academic year!");
@@ -37,37 +35,27 @@ public class ClassSectionService {
 
         String id = idGenerator.generateId("CLS");
 
-        Teacher classTeacher = null;
-
-        if (dto.getClassTeacherId() != null) {
-
-            // ⭐ CHECK IF TEACHER IS ALREADY CLASS TEACHER OF ANOTHER SECTION
-            if (classSectionRepository.existsByClassTeacher_TeacherId(dto.getClassTeacherId())) {
-                throw new RuntimeException(
-                        "Teacher " + dto.getClassTeacherId() + " is already assigned as class teacher to another class section."
-                );
-            }
-
-            classTeacher = teacherRepository.findById(dto.getClassTeacherId())
-                    .orElseThrow(() ->
-                            new RuntimeException("Teacher not found with ID: " + dto.getClassTeacherId()));
-        }
+//        Teacher classTeacher = null;
+//
+//        if (request.getClassTeacherId() != null && !request.getClassTeacherId().isBlank()) {
+//            classTeacher = teacherRepository.findById(request.getClassTeacherId())
+//                    .orElseThrow(() -> new RuntimeException("Teacher not found with ID: " + request.getClassTeacherId()));
+//        }
 
         ClassSection classSection = ClassSection.builder()
                 .classSectionId(id)
-                .className(dto.getClassName())
-                .section(dto.getSection())
-                .academicYear(dto.getAcademicYear())
-                .classTeacher(classTeacher)
-                .capacity(dto.getCapacity())
-                .currentStrength(dto.getCurrentStrength())
+                .className(request.getClassName())
+                .section(request.getSection())
+                .academicYear(request.getAcademicYear())
+//                .classTeacher(classTeacher)
+                .capacity(request.getCapacity())
+                .currentStrength(request.getCurrentStrength())
                 .build();
 
         ClassSection savedClass = classSectionRepository.save(classSection);
 
-        // SAVE SUBJECTS
-        if (dto.getSubjectIds() != null) {
-            for (String subjectId : dto.getSubjectIds()) {
+        if (request.getSubjectIds() != null) {
+            for (String subjectId : request.getSubjectIds()) {
 
                 Subject subject = subjectRepository.findById(subjectId)
                         .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
@@ -127,7 +115,7 @@ public class ClassSectionService {
     // ============================
     // ASSIGN TEACHER TO CLASS SECTION
     // ============================
-    public ClassSectionDTO assignTeacher(String classSectionId, String teacherId, String teacherName) {
+    public ClassSectionDTO assignTeacher(String classSectionId, String teacherId) {
 
         // ⭐ CHECK IF TEACHER ALREADY ASSIGNED ANYWHERE
         if (classSectionRepository.existsByClassTeacher_TeacherId(teacherId)) {
@@ -152,29 +140,31 @@ public class ClassSectionService {
     // UPDATE CLASS SECTION
     // ============================
     @Transactional
-    public ClassSectionDTO updateClassSection(String id, ClassSectionDTO dto) {
+    public ClassSectionDTO updateClassSection(String id, ClassSectionRequest request) { // <-- 4. Change parameter
 
         ClassSection existing = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Class section not found"));
 
-        existing.setClassName(dto.getClassName());
-        existing.setSection(dto.getSection());
-        existing.setAcademicYear(dto.getAcademicYear());
-        existing.setCapacity(dto.getCapacity());
-        existing.setCurrentStrength(dto.getCurrentStrength());
+        existing.setClassName(request.getClassName());
+        existing.setSection(request.getSection());
+        existing.setAcademicYear(request.getAcademicYear());
+        existing.setCapacity(request.getCapacity());
 
-        if (dto.getClassTeacherId() != null) {
+        // Notice we do NOT update currentStrength here. It is handled by student assignments!
 
-            // ⭐ CHECK IF TEACHER ALREADY ASSIGNED
-            if (classSectionRepository.existsByClassTeacher_TeacherId(dto.getClassTeacherId())) {
+        if (request.getClassTeacherId() != null && !request.getClassTeacherId().isBlank()) {
+
+            // ⭐ CHECK IF TEACHER ALREADY ASSIGNED TO ANOTHER CLASS
+            if (classSectionRepository.existsByClassTeacher_TeacherId(request.getClassTeacherId()) &&
+                    (existing.getClassTeacher() == null || !existing.getClassTeacher().getTeacherId().equals(request.getClassTeacherId()))) {
                 throw new RuntimeException(
-                        "Teacher " + dto.getClassTeacherId() + " is already assigned as class teacher to another class section."
+                        "Teacher " + request.getClassTeacherId() + " is already assigned as class teacher to another class section."
                 );
             }
 
-            Teacher teacher = teacherRepository.findById(dto.getClassTeacherId())
+            Teacher teacher = teacherRepository.findById(request.getClassTeacherId())
                     .orElseThrow(() ->
-                            new RuntimeException("Teacher not found: " + dto.getClassTeacherId()));
+                            new RuntimeException("Teacher not found: " + request.getClassTeacherId()));
             existing.setClassTeacher(teacher);
         } else {
             existing.setClassTeacher(null);
@@ -183,8 +173,8 @@ public class ClassSectionService {
         // UPDATE SUBJECTS
         classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
 
-        if (dto.getSubjectIds() != null && !dto.getSubjectIds().isEmpty()) {
-            for (String subjectId : dto.getSubjectIds()) {
+        if (request.getSubjectIds() != null && !request.getSubjectIds().isEmpty()) {
+            for (String subjectId : request.getSubjectIds()) {
 
                 Subject subject = subjectRepository.findById(subjectId)
                         .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
@@ -215,8 +205,7 @@ public class ClassSectionService {
             dto.setClassTeacherName(section.getClassTeacher().getTeacherName());
         }
 
-        int strength = studentRepository.countByClassSection_ClassSectionId(section.getClassSectionId());
-        dto.setCurrentStrength(strength);
+        dto.setCurrentStrength(section.getCurrentStrength());
 
         List<ClassSubjectMapping> mappings =
                 classSubjectMappingRepository.findByClassSection_ClassSectionId(section.getClassSectionId());

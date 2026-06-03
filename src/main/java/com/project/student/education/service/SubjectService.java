@@ -1,9 +1,6 @@
 package com.project.student.education.service;
 
-import com.project.student.education.DTO.AssignSubjectTeacherDTO;
-import com.project.student.education.DTO.ClassSubjectAssignRequest;
-import com.project.student.education.DTO.ClassSubjectMappingDTO;
-import com.project.student.education.DTO.SubjectDTO;
+import com.project.student.education.DTO.*;
 import com.project.student.education.entity.*;
 import com.project.student.education.repository.ClassSectionRepository;
 import com.project.student.education.repository.ClassSubjectMappingRepository;
@@ -27,13 +24,17 @@ public class SubjectService {
     private final ModelMapper modelMapper;
     private final ClassSubjectMappingRepository classSubjectMapping;
 
-    public SubjectDTO createSubject(SubjectDTO subjectDTO) {
+    public SubjectResponseDTO createSubject(SubjectDTO subjectDTO) {
 
         subjectRepository.findBySubjectNameIgnoreCase(subjectDTO.getSubjectName())
-                .ifPresent(s -> { throw new RuntimeException("Subject name already exists!"); });
+                .ifPresent(s -> {
+                    throw new RuntimeException("Subject name already exists!");
+                });
 
         subjectRepository.findBySubjectCodeIgnoreCase(subjectDTO.getSubjectCode())
-                .ifPresent(s -> { throw new RuntimeException("Subject code already exists!"); });
+                .ifPresent(s -> {
+                    throw new RuntimeException("Subject code already exists!");
+                });
 
         String id = idGenerator.generateId("SUB");
 
@@ -45,7 +46,8 @@ public class SubjectService {
                 .build();
 
         Subject saved = subjectRepository.save(subject);
-        return modelMapper.map(saved, SubjectDTO.class);
+
+        return modelMapper.map(saved, SubjectResponseDTO.class);
     }
 
     public SubjectDTO updateSubject(String id, SubjectDTO dto) {
@@ -60,10 +62,10 @@ public class SubjectService {
         return modelMapper.map(updated, SubjectDTO.class);
     }
 
-    public List<SubjectDTO> getAllSubjects() {
+    public List<SubjectResponseDTO> getAllSubjects() {
         return subjectRepository.findAll()
                 .stream()
-                .map(subject -> modelMapper.map(subject, SubjectDTO.class))
+                .map(subject -> modelMapper.map(subject, SubjectResponseDTO.class))
                 .toList();
     }
 
@@ -84,10 +86,10 @@ public class SubjectService {
     }
 
 
-    public SubjectDTO getSubjectById(String subjectId) {
+    public SubjectResponseDTO getSubjectById(String subjectId) {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found with ID: " + subjectId));
-        return modelMapper.map(subject, SubjectDTO.class);
+        return modelMapper.map(subject, SubjectResponseDTO.class);
     }
 
     public List<ClassSubjectMappingDTO> assignSubjects(ClassSubjectAssignRequest req) {

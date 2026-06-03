@@ -1,6 +1,8 @@
 package com.project.student.education.controller;
 
+import com.project.student.education.DTO.StudentBulkUploadDTO;
 import com.project.student.education.DTO.StudentDTO;
+import com.project.student.education.DTO.StudentProfileUpdateDTO;
 import com.project.student.education.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +21,29 @@ public class StudentController {
     @Autowired
     private StudentService studentService;
 
+    @PostMapping("/bulk-create")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
+    public ResponseEntity<List<StudentDTO>> createStudents(
+            @RequestBody List<StudentBulkUploadDTO> students) {
+
+        return ResponseEntity.ok(
+                studentService.createStudents(students)
+        );
+    }
+    @PutMapping("/complete-profile")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<StudentDTO>
+    completeProfile(
+            @RequestBody StudentProfileUpdateDTO dto) {
+
+        return ResponseEntity.ok(
+                studentService.completeProfile(dto)
+        );
+    }
+
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER')")
     @GetMapping("/allStudents")
     public ResponseEntity<List<StudentDTO>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAllStudents());
@@ -30,7 +52,7 @@ public class StudentController {
 
     // ADMIN + TEACHER + STUDENT + PARENT
     // (Students/Parents can call this, but **service layer should check** if they are accessing only their own profile)
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','PARENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER','STUDENT','PARENT')")
     @GetMapping("/{studentId}")
     public ResponseEntity<StudentDTO> getStudent(@PathVariable String studentId) {
         return ResponseEntity.ok(studentService.getStudentById(studentId));
@@ -38,7 +60,7 @@ public class StudentController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PutMapping(value = "/{studentId}", consumes = "multipart/form-data")
     public ResponseEntity<StudentDTO> updateStudent(
             @PathVariable String studentId,
@@ -50,7 +72,7 @@ public class StudentController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @DeleteMapping("/{studentId}")
     public ResponseEntity<StudentDTO> deleteStudent(@PathVariable String studentId) {
         return ResponseEntity.ok(studentService.deleteStudent(studentId));
@@ -58,7 +80,7 @@ public class StudentController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PutMapping("/{studentId}/transfer")
     public ResponseEntity<StudentDTO> transferStudent(
             @PathVariable String studentId,
@@ -69,7 +91,7 @@ public class StudentController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER')")
     @GetMapping("/count")
     public ResponseEntity<Long> countStudents() {
         return ResponseEntity.ok(studentService.getStudentCount());
@@ -77,7 +99,7 @@ public class StudentController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER')")
     @GetMapping("/dashboard/gender-percentage")
     public ResponseEntity<Map<String, Double>> getGenderPercentage() {
         return ResponseEntity.ok(studentService.getGenderPercentage());

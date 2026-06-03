@@ -1,10 +1,7 @@
 package com.project.student.education.controller;
 
 
-import com.project.student.education.DTO.AssignSubjectTeacherDTO;
-import com.project.student.education.DTO.ClassSubjectAssignRequest;
-import com.project.student.education.DTO.ClassSubjectMappingDTO;
-import com.project.student.education.DTO.SubjectDTO;
+import com.project.student.education.DTO.*;
 import com.project.student.education.entity.Subject;
 import com.project.student.education.service.StudentService;
 import com.project.student.education.service.SubjectService;
@@ -28,11 +25,15 @@ public class SubjectController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/createSubject")
-    public ResponseEntity<SubjectDTO> createSubject(@RequestBody SubjectDTO subject){
-        SubjectDTO subjectDTO = subjectService.createSubject(subject);
-        return new ResponseEntity<>(subjectDTO, HttpStatus.CREATED);
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
+    public ResponseEntity<SubjectResponseDTO> createSubject(
+            @RequestBody SubjectDTO subject) {
+
+        SubjectResponseDTO response =
+                subjectService.createSubject(subject);
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 
@@ -47,23 +48,23 @@ public class SubjectController {
 
 
     // ADMIN + TEACHER + STUDENT + PARENT
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','PARENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','PRINCIPAL','STUDENT','PARENT')")
     @GetMapping("/allSubjects")
-    public ResponseEntity<List<SubjectDTO>> getAllSubjects() {
+    public ResponseEntity<List<SubjectResponseDTO>> getAllSubjects() {
         return ResponseEntity.ok(subjectService.getAllSubjects());
     }
 
 
     // ADMIN + TEACHER + STUDENT + PARENT
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','PARENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','PRINCIPAL','STUDENT','PARENT')")
     @GetMapping("/{subjectId}")
-    public ResponseEntity<SubjectDTO> getSubject(@PathVariable String subjectId) {
+    public ResponseEntity<SubjectResponseDTO> getSubject(@PathVariable String subjectId) {
         return ResponseEntity.ok(subjectService.getSubjectById(subjectId));
     }
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL')")
     @DeleteMapping("/{subjectId}")
     public ResponseEntity<Void> deleteSubject(@PathVariable String subjectId) {
         subjectService.deleteSubject(subjectId);
@@ -72,7 +73,7 @@ public class SubjectController {
 
 
     // ADMIN ONLY - Assign subjects to a class
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL')")
     @PostMapping("/assign")
     public ResponseEntity<List<ClassSubjectMappingDTO>> assignSubjectsToClass(
             @RequestBody ClassSubjectAssignRequest request) {
@@ -82,7 +83,7 @@ public class SubjectController {
 
 
     // ADMIN ONLY - Update subject + teacher mapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL')")
     @PutMapping("/assign")
     public ResponseEntity<List<ClassSubjectMappingDTO>> updateAssignSubjectsToClass(
             @RequestBody ClassSubjectAssignRequest request) {
@@ -92,7 +93,7 @@ public class SubjectController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','TEACHER')")
     @GetMapping("/assign/{classSectionId}")
     public ResponseEntity<List<ClassSubjectMappingDTO>> getAssignedSubjects(
             @PathVariable String classSectionId) {
@@ -102,7 +103,7 @@ public class SubjectController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL')")
     @PostMapping("/assignSubjectTeacher")
     public ResponseEntity<?> assignTeacher(@RequestBody AssignSubjectTeacherDTO dto) {
         return ResponseEntity.ok(Map.of("message", subjectService.assignTeacherToSubject(dto)));
@@ -110,7 +111,7 @@ public class SubjectController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','TEACHER')")
     @GetMapping("/{classSectionId}/teachers")
     public ResponseEntity<?> getSubjectTeacherMapping(@PathVariable String classSectionId) {
         return ResponseEntity.ok(subjectService.getMappingForClass(classSectionId));

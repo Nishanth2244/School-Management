@@ -3,14 +3,10 @@ package com.project.student.education.DTO;
 import lombok.Data;
 
 @Data
-public class AdminCreateRequestDTO {
-	
-	private String userName;
+public class CompleteOnboardingRequestDTO {
+
 	private String password;
-	private String email;
 	private String experience;
 	private String address;
-	private String fullName;
-	private String phone;
-
+	private String phoneNo;
 }
