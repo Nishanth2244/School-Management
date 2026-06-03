@@ -1,87 +1,99 @@
 package com.project.student.education.controller;
 
+import com.project.student.education.DTO.*;
 
-import com.project.student.education.DTO.ComprehensiveScheduleRequest;
-import com.project.student.education.DTO.StudentTransportDTO;
-import com.project.student.education.DTO.TransportAssignRequest;
-import com.project.student.education.entity.TransportRoute;
 import com.project.student.education.service.TransportService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
 @RestController
-@RequestMapping("/api/student/transport")
+@RequestMapping("/api/student/transport-management")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL')")
 public class TransportController {
 
-    private final TransportService transportService;
+    private final TransportService managementService;
 
-
-    // ADMIN ONLY — Create route
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/route")
-    public ResponseEntity<TransportRoute> create(@RequestBody TransportRoute route) {
-        return ResponseEntity.ok(transportService.createRoute(route));
+    @PostMapping("/buses")
+    public ResponseEntity<BusResponseDTO> createBus(@RequestBody BusRequestDTO busRequest) {
+        return ResponseEntity.ok(managementService.createBus(busRequest));
     }
 
-
-    // ADMIN ONLY — Update route
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<TransportRoute> update(
-            @PathVariable String id,
-            @RequestBody TransportRoute route) {
-        return ResponseEntity.ok(transportService.updateRoute(id, route));
+    @GetMapping("/buses")
+    public ResponseEntity<List<BusResponseDTO>> getAllBuses() {
+        return ResponseEntity.ok(managementService.getAllBuses());
     }
 
-
-    // ADMIN ONLY — Assign transport
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/assign/{studentId}")
-    public ResponseEntity<StudentTransportDTO> assign(
-            @PathVariable String studentId,
-            @RequestBody TransportAssignRequest assignRequest) {
-
-        return ResponseEntity.ok(transportService.assignTransport(studentId, assignRequest));
+    @GetMapping("/buses/{id}")
+    public ResponseEntity<BusResponseDTO> getBusById(@PathVariable String id) {
+        return ResponseEntity.ok(managementService.getBusById(id));
     }
 
-
-    // ADMIN ONLY — Update transport
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/assign/{studentId}")
-    public ResponseEntity<StudentTransportDTO> updateTransport(
-            @PathVariable String studentId,
-            @RequestBody TransportAssignRequest assignRequest) {
-
-        return ResponseEntity.ok(transportService.assignTransport(studentId, assignRequest));
+    @PutMapping("/buses/{id}")
+    public ResponseEntity<BusResponseDTO> updateBus(@PathVariable String id, @RequestBody BusRequestDTO busRequest) {
+        return ResponseEntity.ok(managementService.updateBus(id, busRequest));
     }
 
-
-    // ADMIN + STUDENT + PARENT — Student must only access own details
-    @PreAuthorize("hasAnyRole('ADMIN','STUDENT','PARENT')")
-    @GetMapping("/{studentId}")
-    public ResponseEntity<StudentTransportDTO> getDetails(@PathVariable String studentId) {
-        return ResponseEntity.ok(transportService.getStudentTransportDetails(studentId));
+    @DeleteMapping("/buses/{id}")
+    public ResponseEntity<String> deleteBus(@PathVariable String id) {
+        managementService.deleteBus(id);
+        return ResponseEntity.ok("Bus asset deleted successfully");
     }
 
-
-    // ADMIN + TEACHER — View students using each transport route
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
-    @GetMapping("/route/{routeId}/students")
-    public ResponseEntity<?> getStudentsByRoute(@PathVariable String routeId) {
-        return ResponseEntity.ok(transportService.getStudentsByRoute(routeId));
+    // --- DRIVER CRUD ---
+    @PostMapping("/drivers")
+    public ResponseEntity<DriverResponseDTO> createDriver(@RequestBody DriverRequestDTO driverRequest) {
+        return ResponseEntity.ok(managementService.createDriver(driverRequest));
     }
 
+    @GetMapping("/drivers")
+    public ResponseEntity<List<DriverResponseDTO>> getAllDrivers() {
+        return ResponseEntity.ok(managementService.getAllDrivers());
+    }
 
-    // ADMIN + TEACHER — View all transport routes
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @GetMapping("/drivers/{id}")
+    public ResponseEntity<DriverResponseDTO> getDriverById(@PathVariable String id) {
+        return ResponseEntity.ok(managementService.getDriverById(id));
+    }
+
+    @PutMapping("/drivers/{id}")
+    public ResponseEntity<DriverResponseDTO> updateDriver(@PathVariable String id, @RequestBody DriverRequestDTO driverRequest) {
+        return ResponseEntity.ok(managementService.updateDriver(id, driverRequest));
+    }
+
+    @DeleteMapping("/drivers/{id}")
+    public ResponseEntity<String> deleteDriver(@PathVariable String id) {
+        managementService.deleteDriver(id);
+        return ResponseEntity.ok("Driver asset profile deleted successfully");
+    }
+
+    // --- ROUTE CRUD ---
+    @PostMapping("/routes")
+    public ResponseEntity<RouteResponseDTO> createRoute(@RequestBody RouteRequestDTO routeRequest) {
+        return ResponseEntity.ok(managementService.createRoute(routeRequest));
+    }
+
     @GetMapping("/routes")
-    public ResponseEntity<List<TransportRoute>> getRoutes() {
-        return ResponseEntity.ok(transportService.getAllRoute());
+    public ResponseEntity<List<RouteResponseDTO>> getAllRoutes() {
+        return ResponseEntity.ok(managementService.getAllRoutes());
     }
 
+    @GetMapping("/routes/{id}")
+    public ResponseEntity<RouteResponseDTO> getRouteById(@PathVariable String id) {
+        return ResponseEntity.ok(managementService.getRouteById(id));
+    }
+
+    @PutMapping("/routes/{id}")
+    public ResponseEntity<RouteResponseDTO> updateRoute(@PathVariable String id, @RequestBody RouteRequestDTO routeRequest) {
+        return ResponseEntity.ok(managementService.updateRoute(id, routeRequest));
+    }
+
+    @DeleteMapping("/routes/{id}")
+    public ResponseEntity<String> deleteRoute(@PathVariable String id) {
+        managementService.deleteRoute(id);
+        return ResponseEntity.ok("Route asset configuration deleted successfully");
+    }
 }
