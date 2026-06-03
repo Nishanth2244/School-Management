@@ -4,6 +4,9 @@ import com.project.student.education.DTO.ClassSectionMiniDTO;
 import com.project.student.education.DTO.TeacherDTO;
 import com.project.student.education.DTO.TeacherRegistrationDTO;
 import com.project.student.education.DTO.TeacherWeeklyTimetableDTO;
+import com.project.student.education.ExceptionHandling.BadRequestException;
+import com.project.student.education.ExceptionHandling.ConflictException;
+import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.entity.*;
 import com.project.student.education.enums.Role;
 import com.project.student.education.repository.*;
@@ -43,7 +46,7 @@ public class TeacherService {
 
         public TeacherDTO addTeacher(TeacherDTO dto) {
                 if (teacherRepository.existsByEmail(dto.getEmail())) {
-                        throw new RuntimeException("Email already exists");
+                        throw new ConflictException("Email already exists");
                 }
 
                 String teacherId = idGenerator.generateId("TCH");
@@ -95,13 +98,13 @@ public class TeacherService {
 
         public TeacherDTO getTeacherById(String teacherId) {
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
                 return modelMapper.map(teacher, TeacherDTO.class);
         }
 
         public TeacherDTO updateTeacher(String teacherId, TeacherDTO dto) {
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
                 User user = teacher.getUser();
 
                 String oldEmail = teacher.getEmail();
@@ -134,7 +137,7 @@ public class TeacherService {
 
         public String deleteTeacher(String teacherId) {
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
 
                 teacherRepository.delete(teacher);
                 userRepository.delete(teacher.getUser());
@@ -148,9 +151,9 @@ public class TeacherService {
 
         public String assignTeacher(String teacherId, String classSectionId) {
                 ClassSection classSection = classSectionRepository.findById(classSectionId)
-                                .orElseThrow(() -> new RuntimeException("Class section not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Class section not found"));
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
                 classSection.setClassTeacher(teacher);
                 classSectionRepository.save(classSection);
                 return "Teacher  " + teacherId + "  assigned to class  " + classSectionId + "  successfully";
@@ -158,10 +161,10 @@ public class TeacherService {
 
         public String updateClassTeacher(String classSectionId, String teacherId) {
                 ClassSection section = classSectionRepository.findById(classSectionId)
-                                .orElseThrow(() -> new RuntimeException("Class section not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Class section not found"));
 
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
 
                 section.setClassTeacher(teacher);
                 classSectionRepository.save(section);
@@ -174,7 +177,7 @@ public class TeacherService {
         public List<ClassSectionMiniDTO> getClassesHandledByTeacher(String teacherId) {
 
                 if (!teacherRepository.existsById(teacherId)) {
-                        throw new RuntimeException("Teacher not found: " + teacherId);
+                        throw new ResourceNotFoundException("Teacher not found: " + teacherId);
                 }
 
                 // 1. Classes where they are the MAIN CLASS TEACHER
@@ -211,7 +214,7 @@ public class TeacherService {
 
         public TeacherWeeklyTimetableDTO getTeacherWeeklyTimetable(String teacherId, LocalDate weekReference) {
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
 
                 List<Timetable> list = timetableRepository
                                 .findByTeacher_TeacherIdOrderByDayAscStartTimeAsc(teacherId);
@@ -279,12 +282,12 @@ public class TeacherService {
 
         public TeacherWeeklyTimetableDTO getClassTeacherTimetable(String teacherId, LocalDate weekStart) {
                 Teacher teacher = teacherRepository.findById(teacherId)
-                                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
 
                 List<ClassSection> sections = classSectionRepository.findByClassTeacher_TeacherId(teacherId);
 
                 if (sections == null || sections.isEmpty()) {
-                        throw new RuntimeException("This teacher is not a class teacher");
+                        throw new BadRequestException("This teacher is not a class teacher");
                 }
 
                 ClassSection section = sections.get(0);
@@ -403,7 +406,7 @@ public class TeacherService {
 
                 // 3. Handle actual mail sending failures (e.g., SMTP issues)
                 if (!failedEmails.isEmpty()) {
-                        throw new RuntimeException("Failed to send emails to: " + String.join(", ", failedEmails));
+                        throw new ConflictException("Failed to send emails to: " + String.join(", ", failedEmails));
                 }
         }
 
@@ -413,10 +416,10 @@ public class TeacherService {
 
                 TeacherRegistrationToken tokenEntity = registrationTokenRepository
                                 .findByToken(token)
-                                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                                .orElseThrow(() -> new BadRequestException("Invalid token"));
 
                 if (tokenEntity.isUsed()) {
-                        throw new RuntimeException(
+                        throw new ConflictException(
                                         "Registration already completed");
                 }
 

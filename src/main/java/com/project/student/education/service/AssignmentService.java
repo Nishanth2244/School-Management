@@ -2,6 +2,7 @@ package com.project.student.education.service;
 
 
 import com.project.student.education.DTO.AssignmentDTO;
+import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.config.AssignmentId;
 import com.project.student.education.entity.*;
 import com.project.student.education.repository.AssignmentRepository;
@@ -202,7 +203,7 @@ public class AssignmentService {
     public List<AssignmentDTO> getAllAssignmentsByClass(String classSectionId) {
         List<Assignment>assignment=assignmentRepository.findByClassSection_ClassSectionId(classSectionId);
         if(assignment.isEmpty()) {
-            throw new RuntimeException("No assignments found for class section ID: " + classSectionId);
+            throw new ResourceNotFoundException("No assignments found for class section ID: " + classSectionId);
 
         }
         return  assignment.stream().map(this::toDTO).collect(Collectors.toList());

@@ -1,6 +1,9 @@
 package com.project.student.education.repository;
 
 import com.project.student.education.entity.Teacher;
+import com.project.student.education.entity.User;
+import com.project.student.education.entity.superAdmin;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -22,4 +25,6 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
 
     @Query("SELECT t.teacherId FROM Teacher t")
     List<String> findAllTeacherIds();
+
+	Optional<Teacher> findByUser(User user);
 }

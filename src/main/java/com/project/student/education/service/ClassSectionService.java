@@ -3,6 +3,8 @@ package com.project.student.education.service;
 import com.project.student.education.DTO.ClassSectionDTO;
 import com.project.student.education.DTO.ClassSectionRequest;
 import com.project.student.education.DTO.StudentDTO;
+import com.project.student.education.ExceptionHandling.BadRequestException;
+import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.entity.*;
 import com.project.student.education.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +83,7 @@ public class ClassSectionService {
     // GET ALL CLASS SECTIONS
     // ============================
     public List<ClassSectionDTO> getAllClassSections() {
-        return classSectionRepository.findAll()
+        return classSectionRepository.findByIsActiveTrue()
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -104,7 +106,7 @@ public class ClassSectionService {
         List<Student> students = studentRepository.findByClassSection_ClassSectionId(classSectionId);
 
         if (students.isEmpty()) {
-            throw new RuntimeException("No students found for class section: " + classSectionId);
+            throw new ResourceNotFoundException("No students found for class section: " + classSectionId);
         }
 
         return students.stream()
@@ -140,7 +142,7 @@ public class ClassSectionService {
     // UPDATE CLASS SECTION
     // ============================
     @Transactional
-    public ClassSectionDTO updateClassSection(String id, ClassSectionRequest request) { // <-- 4. Change parameter
+    public ClassSectionDTO updateClassSection(String id, ClassSectionRequest request) {
 
         ClassSection existing = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Class section not found"));
@@ -152,9 +154,12 @@ public class ClassSectionService {
 
         // Notice we do NOT update currentStrength here. It is handled by student assignments!
 
+        // ==========================================
+        // 1. TEACHER LOGIC
+        // ==========================================
+        // If not provided (null or blank), the existing teacher remains untouched.
         if (request.getClassTeacherId() != null && !request.getClassTeacherId().isBlank()) {
 
-            // ⭐ CHECK IF TEACHER ALREADY ASSIGNED TO ANOTHER CLASS
             if (classSectionRepository.existsByClassTeacher_TeacherId(request.getClassTeacherId()) &&
                     (existing.getClassTeacher() == null || !existing.getClassTeacher().getTeacherId().equals(request.getClassTeacherId()))) {
                 throw new RuntimeException(
@@ -166,34 +171,39 @@ public class ClassSectionService {
                     .orElseThrow(() ->
                             new RuntimeException("Teacher not found: " + request.getClassTeacherId()));
             existing.setClassTeacher(teacher);
-        } else {
-            existing.setClassTeacher(null);
         }
 
-        // UPDATE SUBJECTS
-        classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
+        // ==========================================
+        // 2. SUBJECT LOGIC
+        // ==========================================
+        // Only modify subjects if the subjectIds array was explicitly sent in the request.
+        if (request.getSubjectIds() != null) {
 
-        if (request.getSubjectIds() != null && !request.getSubjectIds().isEmpty()) {
-            for (String subjectId : request.getSubjectIds()) {
+            classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
+            classSubjectMappingRepository.flush();
 
-                Subject subject = subjectRepository.findById(subjectId)
-                        .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+            // Insert new subjects if the array is not empty
+            if (!request.getSubjectIds().isEmpty()) {
+                for (String subjectId : request.getSubjectIds()) {
 
-                ClassSubjectMapping mapping = ClassSubjectMapping.builder()
-                        .id(idGenerator.generateId("CSM"))
-                        .classSection(existing)
-                        .subject(subject)
-                        .teacher(null)
-                        .build();
+                    Subject subject = subjectRepository.findById(subjectId)
+                            .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
 
-                classSubjectMappingRepository.save(mapping);
+                    ClassSubjectMapping mapping = ClassSubjectMapping.builder()
+                            .id(idGenerator.generateId("CSM"))
+                            .classSection(existing)
+                            .subject(subject)
+                            .teacher(null)
+                            .build();
+
+                    classSubjectMappingRepository.save(mapping);
+                }
             }
         }
 
         ClassSection saved = classSectionRepository.save(existing);
         return mapToDTO(saved);
     }
-
     // ============================
     // MAP ENTITY TO DTO
     // ============================
@@ -266,5 +276,32 @@ public class ClassSectionService {
                 .stream()
                 .map(student -> modelMapper.map(student, StudentDTO.class))
                 .toList();
+    }
+    
+    
+    @Transactional
+    public String softDeleteClassSection(String id) {
+        // 1. Fetch Class Section
+        ClassSection section = classSectionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Class Section not found with ID: " + id));
+
+        // 2. Check if already deleted
+        if (!section.getIsActive()) {
+            throw new BadRequestException("This class section is already deleted.");
+        }
+
+        // 3. ENTERPRISE VALIDATION: Check if students exist in this section
+        
+        int studentCount = studentRepository.countByClassSection_ClassSectionId(id);
+        if (studentCount > 0) {
+            throw new BadRequestException("Cannot delete this section! There are " + studentCount + " students currently assigned to it. Please reassign them first.");
+        }
+//        
+
+        // 4. Perform Soft Delete
+        section.setIsActive(false);
+        classSectionRepository.save(section);
+
+        return "Class Section soft deleted successfully.";
     }
 }
