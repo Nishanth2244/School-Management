@@ -1,15 +1,15 @@
 package com.project.student.education.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.project.student.education.DTO.DriverResponseDTO;
+import com.project.student.education.entity.Driver;
+import org.springframework.web.bind.annotation.*;
 
 import com.project.student.education.DTO.CompleteDriverOnboardingRequest;
 import com.project.student.education.service.DriverService;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/driver")
@@ -24,4 +24,25 @@ public class DriverController {
 		
         return driverService.completeDriverOnboarding(request, token);
     }
+
+    @GetMapping("/all")
+    public List<DriverResponseDTO> getAllDrivers() {
+        return driverService.getAllDrivers();
+    }
+
+    @PutMapping("/{driverId}")
+    public DriverResponseDTO updateDriver(
+            @PathVariable String driverId,
+            @RequestBody DriverResponseDTO request) {
+
+        return driverService.updateDriver(driverId, request);
+    }
+
+    @DeleteMapping("/{driverId}")
+    public String deleteDriver(
+            @PathVariable String driverId) {
+
+        return driverService.deleteDriver(driverId);
+    }
+
 }

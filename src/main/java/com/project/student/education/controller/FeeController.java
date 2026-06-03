@@ -81,13 +81,13 @@ public class FeeController {
         return ResponseEntity.ok(feeService.createFeeForClass(req));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping("/admin/dashboard/stats")
     public ResponseEntity<List<ClassFeeStatsDTO>> getAdminFeeStats(@RequestHeader String Authorization) {
         return ResponseEntity.ok(feeService.getAllClassesFeeStats());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping("/admin/class-status/{classSectionId}")
     public ResponseEntity<List<StudentFeeStatusDTO>> getClassFeeStatus(@PathVariable String classSectionId) {
         return ResponseEntity.ok(feeService.getClassStudentFeeStatus(classSectionId));

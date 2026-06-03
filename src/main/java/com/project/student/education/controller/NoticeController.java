@@ -27,8 +27,7 @@ public class NoticeController {
         return ResponseEntity.ok().body(notice1);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
-
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
     @GetMapping("/get/{id}")
     private ResponseEntity<Notice>getNotice(@PathVariable String id) {
         return ResponseEntity.ok(noticeService.getNotice(id));
@@ -52,7 +51,7 @@ public class NoticeController {
         return ResponseEntity.ok("Notice deleted successfully");
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
 
     @GetMapping("/all")
     public ResponseEntity<List<Notice>> getAllNotices() {

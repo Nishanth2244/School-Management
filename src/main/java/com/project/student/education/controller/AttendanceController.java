@@ -67,7 +67,7 @@ public class AttendanceController {
     },
     returnDescription = "Returns attendance summary for the given month."
             )
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{studentId}/{year}/{month}")
     public ResponseEntity<AttendanceViewDTO> getAttendanceByStudent(
             @PathVariable String studentId,
@@ -115,7 +115,7 @@ public class AttendanceController {
             },
             returnDescription = "Returns attendance summary for the academic year."
     )
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @GetMapping("/{studentId}/year/{year}")
     public ResponseEntity<AttendanceViewDTO> getAttendanceAcademicYear(
             @PathVariable String studentId,
