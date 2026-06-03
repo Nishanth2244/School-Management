@@ -1,7 +1,10 @@
 package com.project.student.education.controller;
 
 import com.project.student.education.config.SecurityUtil;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,6 +14,7 @@ import com.project.student.education.DTO.AdminCreateRequestDTO;
 import com.project.student.education.DTO.InviteAdminRequest;
 import com.project.student.education.DTO.InviteDriverRequest;
 import com.project.student.education.config.SecurityUtil;
+import com.project.student.education.service.ClassSectionService;
 import com.project.student.education.service.SuperAdminService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +26,7 @@ public class SuperAdminController {
 
 	private final SuperAdminService superAdminService;
 	private final SecurityUtil securityUtil;
+	private final ClassSectionService classSectionService;
 
 //	@PostMapping("/addAdmin")
 //	public String createAdmin(@RequestBody AdminCreateRequestDTO adminCreateRequestDTO) {
@@ -36,6 +41,12 @@ public class SuperAdminController {
 		Long userId = securityUtil.getCurrentUserId();
 		superAdminService.sendInvite(userId, inviteAdminRequest);
 		return "Invite link succesfully send to the: " + inviteAdminRequest.getEmail();
+	}
+	
+	
+	@PutMapping("/delete/{classSectionId}")
+	public String softDeleteClassSection(@PathVariable String classSectionId) {
+		return classSectionService.softDeleteClassSection(classSectionId);
 	}
 
 }

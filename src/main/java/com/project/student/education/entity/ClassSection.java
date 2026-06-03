@@ -54,6 +54,8 @@ public class ClassSection {
     @ManyToOne
     @JoinColumn(name = "class_teacher_id")
     private Teacher classTeacher;
+    
+    private Boolean isActive = true;
 
 
 

@@ -3,6 +3,8 @@ package com.project.student.education.service;
 import com.project.student.education.DTO.ClassSectionDTO;
 import com.project.student.education.DTO.ClassSectionRequest;
 import com.project.student.education.DTO.StudentDTO;
+import com.project.student.education.ExceptionHandling.BadRequestException;
+import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.entity.*;
 import com.project.student.education.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +83,7 @@ public class ClassSectionService {
     // GET ALL CLASS SECTIONS
     // ============================
     public List<ClassSectionDTO> getAllClassSections() {
-        return classSectionRepository.findAll()
+        return classSectionRepository.findByIsActiveTrue()
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -104,7 +106,7 @@ public class ClassSectionService {
         List<Student> students = studentRepository.findByClassSection_ClassSectionId(classSectionId);
 
         if (students.isEmpty()) {
-            throw new RuntimeException("No students found for class section: " + classSectionId);
+            throw new ResourceNotFoundException("No students found for class section: " + classSectionId);
         }
 
         return students.stream()
@@ -179,6 +181,7 @@ public class ClassSectionService {
 
             classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
             classSubjectMappingRepository.flush();
+
 
             if (!request.getSubjectIds().isEmpty()) {
                 for (String subjectId : request.getSubjectIds()) {
@@ -273,5 +276,32 @@ public class ClassSectionService {
                 .stream()
                 .map(student -> modelMapper.map(student, StudentDTO.class))
                 .toList();
+    }
+    
+    
+    @Transactional
+    public String softDeleteClassSection(String id) {
+        // 1. Fetch Class Section
+        ClassSection section = classSectionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Class Section not found with ID: " + id));
+
+        // 2. Check if already deleted
+        if (!section.getIsActive()) {
+            throw new BadRequestException("This class section is already deleted.");
+        }
+
+        // 3. ENTERPRISE VALIDATION: Check if students exist in this section
+        
+        int studentCount = studentRepository.countByClassSection_ClassSectionId(id);
+        if (studentCount > 0) {
+            throw new BadRequestException("Cannot delete this section! There are " + studentCount + " students currently assigned to it. Please reassign them first.");
+        }
+//        
+
+        // 4. Perform Soft Delete
+        section.setIsActive(false);
+        classSectionRepository.save(section);
+
+        return "Class Section soft deleted successfully.";
     }
 }
