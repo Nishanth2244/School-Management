@@ -1,9 +1,9 @@
 package com.project.student.education.controller;
 
-
-import AIExpose.Agent.Annotations.AIExposeController;
-import AIExpose.Agent.Annotations.AIExposeEpHttp;
-import AIExpose.Agent.Annotations.Describe;
+//
+//import AIExpose.Agent.Annotations.AIExposeController;
+//import AIExpose.Agent.Annotations.AIExposeEpHttp;
+//import AIExpose.Agent.Annotations.Describe;
 import com.project.student.education.DTO.*;
 import com.project.student.education.entity.Payment;
 import com.project.student.education.entity.StudentFee;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
 @RequestMapping("/api/student/fee")
-@AIExposeController
+//@AIExposeController
 public class FeeController {
 
     @Autowired
@@ -29,20 +29,20 @@ public class FeeController {
     public ResponseEntity<StudentFee> createFee(@RequestBody CreateFeeRequest req) {
         return ResponseEntity.ok(feeService.createFee(req));
     }
-
-    @AIExposeEpHttp(
-            name = "Bulk Create Student Fees",
-            description = "Creates fee entries for multiple students in one request using a list of CreateFeeRequest DTOs.",
-            autoExecute = true,
-            tags = {"Fees", "Bulk", "Admin", "Create"},
-            reqParams = @Describe(
-                    name = "reqs",
-                    description = "List of CreateFeeRequest objects representing multiple student fees.",
-                    dataType = "List<CreateFeeRequest>",
-                    example = "See CreateFeeRequest DTO for detailed structure."
-            ),
-            returnDescription = "Returns a list of StudentFee objects created for the students."
-    )
+//
+//    @AIExposeEpHttp(
+//            name = "Bulk Create Student Fees",
+//            description = "Creates fee entries for multiple students in one request using a list of CreateFeeRequest DTOs.",
+//            autoExecute = true,
+//            tags = {"Fees", "Bulk", "Admin", "Create"},
+//            reqParams = @Describe(
+//                    name = "reqs",
+//                    description = "List of CreateFeeRequest objects representing multiple student fees.",
+//                    dataType = "List<CreateFeeRequest>",
+//                    example = "See CreateFeeRequest DTO for detailed structure."
+//            ),
+//            returnDescription = "Returns a list of StudentFee objects created for the students."
+//    )
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/bulk-create")
     public ResponseEntity<List<StudentFee>> bulk(@RequestBody List<CreateFeeRequest> reqs) {
@@ -50,19 +50,19 @@ public class FeeController {
     }
 
 
-    @AIExposeEpHttp(
-            name = "Get All Fees for Student",
-            description = "Fetches all fee records associated with a specific student using their studentId.",
-            autoExecute = true,
-            tags = {"Fees", "Admin", "Get", "Student"},
-            pathParams = @Describe(
-                    name = "studentId",
-                    description = "Unique ID of the student whose fee records need to be retrieved.",
-                    dataType = "String",
-                    example = "STU2025003"
-            ),
-            returnDescription = "Returns a list of StudentFeeDTO objects containing fee details for the student."
-    )
+//    @AIExposeEpHttp(
+//            name = "Get All Fees for Student",
+//            description = "Fetches all fee records associated with a specific student using their studentId.",
+//            autoExecute = true,
+//            tags = {"Fees", "Admin", "Get", "Student"},
+//            pathParams = @Describe(
+//                    name = "studentId",
+//                    description = "Unique ID of the student whose fee records need to be retrieved.",
+//                    dataType = "String",
+//                    example = "STU2025003"
+//            ),
+//            returnDescription = "Returns a list of StudentFeeDTO objects containing fee details for the student."
+//    )
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/student/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> allForStudent(@PathVariable String studentId) {

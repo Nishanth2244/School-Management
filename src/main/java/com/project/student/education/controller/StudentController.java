@@ -3,6 +3,7 @@ package com.project.student.education.controller;
 import com.project.student.education.DTO.StudentBulkUploadDTO;
 import com.project.student.education.DTO.StudentDTO;
 import com.project.student.education.DTO.StudentProfileUpdateDTO;
+import com.project.student.education.DTO.StudentUpdateRequestDTO;
 import com.project.student.education.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -60,16 +61,15 @@ public class StudentController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','STUDENT','PARENT')")
     @PutMapping(value = "/{studentId}", consumes = "multipart/form-data")
     public ResponseEntity<StudentDTO> updateStudent(
             @PathVariable String studentId,
-            @RequestPart("data") StudentDTO dto,
+            @RequestPart("data") StudentUpdateRequestDTO dto, // ⬅️ Changed this DTO
             @RequestPart(value = "photo", required = false) MultipartFile photo
     ) throws IOException {
         return ResponseEntity.ok(studentService.updateStudent(studentId, dto, photo));
     }
-
 
     // ADMIN ONLY
     @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")

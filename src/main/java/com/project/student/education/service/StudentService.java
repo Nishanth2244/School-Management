@@ -75,91 +75,92 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentDTO updateStudent(String studentId, StudentDTO dto, MultipartFile photo) throws IOException {
+    public StudentDTO updateStudent(String studentId, StudentUpdateRequestDTO dto, MultipartFile photo) throws IOException {
 
+        // ==========================================
+        // SECURITY CHECK: VERIFY OWNERSHIP
+        // ==========================================
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        // Check if the logged-in user has an Administrative role
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority ->
+                        grantedAuthority.getAuthority().equals("ROLE_ADMIN") ||
+                                grantedAuthority.getAuthority().equals("ROLE_PRINCIPAL") ||
+                                grantedAuthority.getAuthority().equals("ROLE_SUPER_ADMIN")
+                );
+
+        // If not an admin, they must be a student updating their own profile
+        if (!isAdmin) {
+            if (!currentUsername.equalsIgnoreCase(studentId)) {
+                throw new RuntimeException("Access Denied: You are not authorized to update this profile.");
+            }
+        }
+
+        // ==========================================
+        // PROCEED WITH UPDATE LOGIC
+        // ==========================================
         Student existing = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found: " + studentId));
 
-        existing.setFullName(dto.getFullName());
-        existing.setDateOfBirth(dto.getDateOfBirth());
-        existing.setGender(dto.getGender());
-        existing.setBloodGroup(dto.getBloodGroup());
-        existing.setNationality(dto.getNationality());
-        existing.setReligion(dto.getReligion());
-        existing.setCategory(dto.getCategory());
-        existing.setAadhaarNumber(dto.getAadhaarNumber());
-        existing.setAcademicYear(dto.getAcademicYear());
-        existing.setJoiningDate(dto.getJoiningDate());
-        existing.setRollNumber(dto.getRollNumber());
-        existing.setActive(dto.getActive());
-        existing.setAddress(dto.getAddress());
-        existing.setCity(dto.getCity());
-        existing.setState(dto.getState());
-        existing.setPincode(dto.getPincode());
-        existing.setContactNumber(dto.getContactNumber());
-        existing.setEmail(dto.getEmail());
+        // Only set fields if they are NOT null in the incoming JSON
+        if (dto.getFullName() != null) existing.setFullName(dto.getFullName());
+        if (dto.getDateOfBirth() != null) existing.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getGender() != null) existing.setGender(dto.getGender());
+        if (dto.getBloodGroup() != null) existing.setBloodGroup(dto.getBloodGroup());
+        if (dto.getNationality() != null) existing.setNationality(dto.getNationality());
+        if (dto.getReligion() != null) existing.setReligion(dto.getReligion());
+        if (dto.getCategory() != null) existing.setCategory(dto.getCategory());
+        if (dto.getAadhaarNumber() != null) existing.setAadhaarNumber(dto.getAadhaarNumber());
 
-        existing.setFatherName(dto.getFatherName());
-        existing.setFatherContact(dto.getFatherContact());
-        existing.setMotherName(dto.getMotherName());
-        existing.setMotherContact(dto.getMotherContact());
-        existing.setGuardianName(dto.getGuardianName());
-        existing.setGuardianContact(dto.getGuardianContact());
-        existing.setEmergencyContactName(dto.getEmergencyContactName());
-        existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
-        existing.setTotalFee(dto.getTotalFee());
+        if (dto.getJoiningDate() != null) existing.setJoiningDate(dto.getJoiningDate());
+        if (dto.getRollNumber() != null) existing.setRollNumber(dto.getRollNumber());
+        if (dto.getActive() != null) existing.setActive(dto.getActive());
 
-        if (dto.getClassSectionId() != null) {
-            ClassSection section = classSectionRepository.findById(dto.getClassSectionId())
-                    .orElseThrow(() -> new RuntimeException("Class section not found"));
-            existing.setClassSection(section);
-            existing.setGrade(section.getClassName());
-            existing.setSection(section.getSection());
-        }
+        if (dto.getAddress() != null) existing.setAddress(dto.getAddress());
+        if (dto.getCity() != null) existing.setCity(dto.getCity());
+        if (dto.getState() != null) existing.setState(dto.getState());
+        if (dto.getPincode() != null) existing.setPincode(dto.getPincode());
+        if (dto.getContactNumber() != null) existing.setContactNumber(dto.getContactNumber());
 
+        if (dto.getFatherName() != null) existing.setFatherName(dto.getFatherName());
+        if (dto.getFatherContact() != null) existing.setFatherContact(dto.getFatherContact());
+        if (dto.getMotherName() != null) existing.setMotherName(dto.getMotherName());
+        if (dto.getMotherContact() != null) existing.setMotherContact(dto.getMotherContact());
+        if (dto.getGuardianName() != null) existing.setGuardianName(dto.getGuardianName());
+        if (dto.getGuardianContact() != null) existing.setGuardianContact(dto.getGuardianContact());
+        if (dto.getEmergencyContactName() != null) existing.setEmergencyContactName(dto.getEmergencyContactName());
+        if (dto.getEmergencyContactNumber() != null) existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
+
+        // Handle Photo Update
         if (photo != null && !photo.isEmpty()) {
             String newImageUrl = fileService.updateFile(photo, existing.getProfileImageUrl());
             existing.setProfileImageUrl(newImageUrl);
         }
-        List<StudentFee> pendingZeroFees = studentFeeRepository.findByStudentId(studentId).stream()
-                .filter(f -> f.getStatus() == FeeStatus.PENDING && f.getAmount() == 0)
-                .collect(Collectors.toList());
 
-        if (!pendingZeroFees.isEmpty()) {
-            // Distribute new total fee equally among 0-value terms
-            // Example: If fee updated to 60,000 and there's 1 term with 0 fee -> it becomes 60,000.
-            double amountPerTerm = dto.getTotalFee() / pendingZeroFees.size();
-            for (StudentFee fee : pendingZeroFees) {
-                fee.setAmount(amountPerTerm);
-                studentFeeRepository.save(fee);
+        // Handle Email Update separately
+        if (dto.getEmail() != null) {
+            if (existing.getUser() != null) {
+                User user = existing.getUser();
+                String oldEmail = user.getEmail();
+                String newEmail = dto.getEmail();
+
+                boolean emailChanged = !newEmail.equalsIgnoreCase(oldEmail);
+                existing.setEmail(newEmail);
+
+                if (emailChanged) {
+                    user.setEmail(newEmail);
+                    userRepository.save(user);
+                }
+            } else {
+                existing.setEmail(dto.getEmail());
             }
         }
-        if (existing.getUser() != null) {
-            User user = existing.getUser();
-
-            String oldEmail = user.getEmail();
-            String newEmail = dto.getEmail();
-
-            boolean emailChanged = newEmail != null && !newEmail.equalsIgnoreCase(oldEmail);
-
-            // Update Student.email
-            existing.setEmail(newEmail);
-
-            if (emailChanged) {
-                user.setEmail(newEmail);       // This is CRITICAL!
-                userRepository.save(user);     // Update Auth table
-            }
-        } else {
-            // Fallback (if student has no user mapped, rare case)
-            existing.setEmail(dto.getEmail());
-        }
-
-
 
         Student updated = studentRepository.save(existing);
         return convertToDTO(updated);
     }
-
 
     @Transactional
     public StudentDTO deleteStudent(String studentId) {
@@ -679,85 +680,36 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentDTO completeProfile(
-            StudentProfileUpdateDTO dto) {
+    public StudentDTO completeProfile(StudentProfileUpdateDTO dto) {
 
-        String username =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getName();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        User user =
-                userRepository
-                        .findByUsername(username)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "User not found"));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Student student =
-                studentRepository
-                        .findByUserId(user.getId())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Student not found"));
+        Student student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        student.setDateOfBirth(
-                dto.getDateOfBirth());
+        if (dto.getDateOfBirth() != null) student.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getGender() != null) student.setGender(dto.getGender());
+        if (dto.getBloodGroup() != null) student.setBloodGroup(dto.getBloodGroup());
+        if (dto.getNationality() != null) student.setNationality(dto.getNationality());
+        if (dto.getReligion() != null) student.setReligion(dto.getReligion());
+        if (dto.getCategory() != null) student.setCategory(dto.getCategory());
+        if (dto.getAadhaarNumber() != null) student.setAadhaarNumber(dto.getAadhaarNumber());
+        if (dto.getAddress() != null) student.setAddress(dto.getAddress());
+        if (dto.getCity() != null) student.setCity(dto.getCity());
+        if (dto.getState() != null) student.setState(dto.getState());
+        if (dto.getPincode() != null) student.setPincode(dto.getPincode());
+        if (dto.getContactNumber() != null) student.setContactNumber(dto.getContactNumber());
+        if (dto.getMotherName() != null) student.setMotherName(dto.getMotherName());
+        if (dto.getMotherContact() != null) student.setMotherContact(dto.getMotherContact());
+        if (dto.getGuardianName() != null) student.setGuardianName(dto.getGuardianName());
+        if (dto.getGuardianContact() != null) student.setGuardianContact(dto.getGuardianContact());
+        if (dto.getEmergencyContactName() != null) student.setEmergencyContactName(dto.getEmergencyContactName());
+        if (dto.getEmergencyContactNumber() != null) student.setEmergencyContactNumber(dto.getEmergencyContactNumber());
 
-        student.setGender(
-                dto.getGender());
-
-        student.setBloodGroup(
-                dto.getBloodGroup());
-
-        student.setNationality(
-                dto.getNationality());
-
-        student.setReligion(
-                dto.getReligion());
-
-        student.setCategory(
-                dto.getCategory());
-
-        student.setAadhaarNumber(
-                dto.getAadhaarNumber());
-
-        student.setAddress(
-                dto.getAddress());
-
-        student.setCity(
-                dto.getCity());
-
-        student.setState(
-                dto.getState());
-
-        student.setPincode(
-                dto.getPincode());
-
-        student.setContactNumber(
-                dto.getContactNumber());
-
-        student.setMotherName(
-                dto.getMotherName());
-
-        student.setMotherContact(
-                dto.getMotherContact());
-
-        student.setGuardianName(
-                dto.getGuardianName());
-
-        student.setGuardianContact(
-                dto.getGuardianContact());
-
-        student.setEmergencyContactName(
-                dto.getEmergencyContactName());
-
-        student.setEmergencyContactNumber(
-                dto.getEmergencyContactNumber());
-
-        Student saved =
-                studentRepository.save(student);
+        Student saved = studentRepository.save(student);
 
         return convertToDTO(saved);
     }

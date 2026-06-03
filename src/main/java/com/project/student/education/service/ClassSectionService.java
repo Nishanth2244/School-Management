@@ -140,7 +140,7 @@ public class ClassSectionService {
     // UPDATE CLASS SECTION
     // ============================
     @Transactional
-    public ClassSectionDTO updateClassSection(String id, ClassSectionRequest request) { // <-- 4. Change parameter
+    public ClassSectionDTO updateClassSection(String id, ClassSectionRequest request) {
 
         ClassSection existing = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Class section not found"));
@@ -152,9 +152,12 @@ public class ClassSectionService {
 
         // Notice we do NOT update currentStrength here. It is handled by student assignments!
 
+        // ==========================================
+        // 1. TEACHER LOGIC
+        // ==========================================
+        // If not provided (null or blank), the existing teacher remains untouched.
         if (request.getClassTeacherId() != null && !request.getClassTeacherId().isBlank()) {
 
-            // ⭐ CHECK IF TEACHER ALREADY ASSIGNED TO ANOTHER CLASS
             if (classSectionRepository.existsByClassTeacher_TeacherId(request.getClassTeacherId()) &&
                     (existing.getClassTeacher() == null || !existing.getClassTeacher().getTeacherId().equals(request.getClassTeacherId()))) {
                 throw new RuntimeException(
@@ -166,34 +169,38 @@ public class ClassSectionService {
                     .orElseThrow(() ->
                             new RuntimeException("Teacher not found: " + request.getClassTeacherId()));
             existing.setClassTeacher(teacher);
-        } else {
-            existing.setClassTeacher(null);
         }
 
-        // UPDATE SUBJECTS
-        classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
+        // ==========================================
+        // 2. SUBJECT LOGIC
+        // ==========================================
+        // Only modify subjects if the subjectIds array was explicitly sent in the request.
+        if (request.getSubjectIds() != null) {
 
-        if (request.getSubjectIds() != null && !request.getSubjectIds().isEmpty()) {
-            for (String subjectId : request.getSubjectIds()) {
+            classSubjectMappingRepository.deleteByClassSection_ClassSectionId(id);
+            classSubjectMappingRepository.flush();
 
-                Subject subject = subjectRepository.findById(subjectId)
-                        .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+            if (!request.getSubjectIds().isEmpty()) {
+                for (String subjectId : request.getSubjectIds()) {
 
-                ClassSubjectMapping mapping = ClassSubjectMapping.builder()
-                        .id(idGenerator.generateId("CSM"))
-                        .classSection(existing)
-                        .subject(subject)
-                        .teacher(null)
-                        .build();
+                    Subject subject = subjectRepository.findById(subjectId)
+                            .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
 
-                classSubjectMappingRepository.save(mapping);
+                    ClassSubjectMapping mapping = ClassSubjectMapping.builder()
+                            .id(idGenerator.generateId("CSM"))
+                            .classSection(existing)
+                            .subject(subject)
+                            .teacher(null)
+                            .build();
+
+                    classSubjectMappingRepository.save(mapping);
+                }
             }
         }
 
         ClassSection saved = classSectionRepository.save(existing);
         return mapToDTO(saved);
     }
-
     // ============================
     // MAP ENTITY TO DTO
     // ============================
