@@ -16,9 +16,9 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("Vendor Service API")
+                        .title("School Management API's")
                         .version("1.0")
-                        .description("Vendor onboarding APIs"))
+                        .description("School Management API's"))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(securitySchemeName))
                 .components(new Components()
