@@ -27,4 +27,6 @@ public interface StudentFeeRepository extends JpaRepository<StudentFee,String> {
 
     @Query("SELECT SUM(sf.amountPaid) FROM StudentFee sf JOIN Student s ON sf.studentId = s.studentId WHERE s.classSection.classSectionId = :classSectionId")
     Double getTotalPaidByClass(@Param("classSectionId") String classSectionId);
-}
+
+//    List<StudentFee> findByStudentId(String studentId);
+    }

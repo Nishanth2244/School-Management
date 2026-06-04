@@ -35,6 +35,7 @@ public class LessonPlanService {
                 .subject(sub)
                 .teacher(tch)
                 .topicName(dto.getTopicName())
+                .plannedDate(dto.getPlannedDate())
                 .isCompleted(false)
                 .build();
 
@@ -78,6 +79,7 @@ public class LessonPlanService {
                 .subjectName(p.getSubject().getSubjectName())
                 .teacherName(p.getTeacher().getTeacherName())
                 .topicName(p.getTopicName())
+                .plannedDate(p.getPlannedDate())
                 .isCompleted(p.getIsCompleted())
                 .build();
     }

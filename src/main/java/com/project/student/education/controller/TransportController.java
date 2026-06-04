@@ -25,7 +25,7 @@ public class TransportController {
 
 
     // ADMIN ONLY — Create route
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PostMapping("/route")
     public ResponseEntity<TransportRoute> create(@RequestBody TransportRouteRequest routeReq) {
         return ResponseEntity.ok(transportService.createRoute(routeReq));
@@ -33,7 +33,7 @@ public class TransportController {
 
 
     // ADMIN ONLY — Update route
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<TransportRoute> update(
             @PathVariable String id,
@@ -43,7 +43,7 @@ public class TransportController {
 
 
     // ADMIN ONLY — Assign transport
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PostMapping("/assign/{studentId}")
     public ResponseEntity<StudentTransportDTO> assign(
             @PathVariable String studentId,
@@ -54,7 +54,7 @@ public class TransportController {
 
 
     // ADMIN ONLY — Update transport
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PutMapping("/assign/{studentId}")
     public ResponseEntity<StudentTransportDTO> updateTransport(
             @PathVariable String studentId,
@@ -65,7 +65,7 @@ public class TransportController {
 
 
     // ADMIN + STUDENT + PARENT — Student must only access own details
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','STUDENT','PARENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL','STUDENT','PARENT')")
     @GetMapping("/{studentId}")
     public ResponseEntity<StudentTransportDTO> getDetails(@PathVariable String studentId) {
         return ResponseEntity.ok(transportService.getStudentTransportDetails(studentId));
@@ -73,7 +73,7 @@ public class TransportController {
 
 
     // ADMIN + TEACHER — View students using each transport route
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER')")
     @GetMapping("/route/{routeId}/students")
     public ResponseEntity<?> getStudentsByRoute(@PathVariable String routeId) {
         return ResponseEntity.ok(transportService.getStudentsByRoute(routeId));
@@ -81,13 +81,13 @@ public class TransportController {
 
 
     // ADMIN + TEACHER — View all transport routes
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER')")
     @GetMapping("/routes")
     public ResponseEntity<List<TransportRoute>> getRoutes() {
         return ResponseEntity.ok(transportService.getAllRoute());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN')")
     @PutMapping("/route/{routeId}/assign-driver")
     public ResponseEntity<TransportRoute> assignDriverToRoute(
             @PathVariable String routeId,
@@ -95,7 +95,7 @@ public class TransportController {
 
         return ResponseEntity.ok(transportService.assignDriverToRoute(routeId, driverId));
     }
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN', 'DRIVER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN', 'DRIVER')")
     @GetMapping("/driver/my-routes")
     public ResponseEntity<List<TransportRoute>> getMyRoutes() {
 

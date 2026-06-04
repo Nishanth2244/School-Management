@@ -112,4 +112,11 @@ public class StudentFee {
     private FeeStatus status;
 
     private LocalDateTime createdAt;
+    public double getAmountDue() {
+        return this.amount;
+    }
+
+    public double getRemainingBalance() {
+        return this.amount - (this.amountPaid != null ? this.amountPaid : 0.0);
+    }
 }

@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class LessonPlanResponseDTO {
     private String lessonPlanId;
     private String classSectionId;
+
     private String className;
     private String section;
     private String subjectName;

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -261,6 +262,55 @@ public class FeeService {
                     .status(status)
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    public List<StudentFeeSummaryDTO> getFeeSummaryBySection(String sectionId) {
+        // 1. Fetch students in the section
+        List<Student> students = studentRepository.findByClassSection_ClassSectionId(sectionId);
+
+        return students.stream().map(student -> {
+            // 2. Fetch all actual fee records for this student
+            List<StudentFee> fees = feeRepo.findByStudentId(student.getStudentId());
+
+            // 3. Calculate from the actual fee records rather than just the Student table
+            double totalDue = fees.stream().mapToDouble(StudentFee::getAmountDue).sum();
+            double totalPaid = fees.stream().mapToDouble(f -> f.getAmountPaid() != null ? f.getAmountPaid() : 0.0).sum();
+            double balance = totalDue - totalPaid;
+
+            return StudentFeeSummaryDTO.builder()
+                    .studentId(student.getStudentId())
+                    .studentName(student.getFullName())
+//                    .rollNumber(student.getRollNumber())
+                    .totalDue(totalDue)
+                    .totalPaid(totalPaid)
+                    .remainingBalance(balance)
+                    // If totalDue is 0, the student hasn't been assigned fees yet
+                    .status(totalDue == 0 ? "NO FEE ASSIGNED" : (balance <= 0 ? "FULLY PAID" : (totalPaid > 0 ? "PARTIAL" : "UNPAID")))
+                    .build();
+        }).collect(Collectors.toList());
+    }
+    @Transactional
+    public void generateTermFees(String classSectionId) {
+        List<Student> students = studentRepository.findByClassSection_ClassSectionId(classSectionId);
+
+        for (Student student : students) {
+            Double annual = student.getTotalFee() != null ? student.getTotalFee() : 0.0;
+            double termAmount = annual / 3;
+
+            for (int i = 1; i <= 3; i++) {
+                StudentFee fee = StudentFee.builder()
+                        .feeId(idGenerator.generateId("FEE"))
+                        .studentId(student.getStudentId())
+                        .feeName("Term " + i + " Fee")
+                        .amount(termAmount)
+                        .amountPaid(0.0)
+                        .dueDate(LocalDate.of(2026, 7, 15).plusMonths((i - 1) * 3L))
+                        .status(FeeStatus.PENDING)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                feeRepo.save(fee);
+            }
+        }
     }
 }
 

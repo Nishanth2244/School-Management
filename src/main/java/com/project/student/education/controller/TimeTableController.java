@@ -4,8 +4,10 @@ package com.project.student.education.controller;
 import com.project.student.education.DTO.CreateTimetableRequest;
 import com.project.student.education.DTO.StudentWeeklyTimetableDTO;
 import com.project.student.education.DTO.TeacherWeeklyTimetableDTO;
+import com.project.student.education.DTO.WeeklyTimetableDTO;
 import com.project.student.education.service.StudentService;
 import com.project.student.education.service.TeacherService;
+import com.project.student.education.service.TimetableService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,12 @@ public class TimeTableController {
 
     private final StudentService studentService;
     private final TeacherService teacherService;
+    private final TimetableService timetableService;
 
-    public TimeTableController(StudentService studentService, TeacherService teacherService) {
+    public TimeTableController(StudentService studentService, TeacherService teacherService, TimetableService timetableService) {
         this.studentService = studentService;
         this.teacherService = teacherService;
+        this.timetableService = timetableService;
     }
 
 
@@ -89,6 +93,12 @@ public class TimeTableController {
                 : LocalDate.parse(weekStart);
 
         return ResponseEntity.ok(teacherService.getClassTeacherTimetable(teacherId, ref));
+    }
+
+    @GetMapping("/class-sections/{classSectionId}/timetable")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','SUPER_ADMIN','PRINCIPAL','STUDENT')")
+    public ResponseEntity<List<WeeklyTimetableDTO>> getClassTimetable(@PathVariable String classSectionId) {
+        return ResponseEntity.ok(timetableService.getClassTimetable(classSectionId));
     }
 
 }

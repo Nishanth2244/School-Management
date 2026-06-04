@@ -63,70 +63,88 @@ public class FeeController {
 //            ),
 //            returnDescription = "Returns a list of StudentFeeDTO objects containing fee details for the student."
 //    )
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/admin/student/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> allForStudent(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getAllFees(studentId));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/admin/payments")
     public ResponseEntity<List<Payment>> allPayments() {
         return ResponseEntity.ok(feeService.getAllPayments());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @PostMapping("/admin/class-fee")
     public ResponseEntity<ClassFeeResponse> createFeeForClass(@RequestBody ClassFeeRequest req) {
         return ResponseEntity.ok(feeService.createFeeForClass(req));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/admin/dashboard/stats")
     public ResponseEntity<List<ClassFeeStatsDTO>> getAdminFeeStats(@RequestHeader String Authorization) {
         return ResponseEntity.ok(feeService.getAllClassesFeeStats());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/admin/class-status/{classSectionId}")
     public ResponseEntity<List<StudentFeeStatusDTO>> getClassFeeStatus(@PathVariable String classSectionId) {
         return ResponseEntity.ok(feeService.getClassStudentFeeStatus(classSectionId));
     }
 
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRNCIPAL','PARENT','ADMIN')")
     @GetMapping("/student/summary/{studentId}")
     public ResponseEntity<FeeSummaryDTO> summary(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getSummary(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRNCIPAL','PARENT','ADMIN')")
     @GetMapping("/student/pending/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> pending(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getPendingFees(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/student/all/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> all(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getAllFees(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @PostMapping("/student/pay")
     public ResponseEntity<Payment> pay(@RequestBody CreatePaymentRequest req) {
         return ResponseEntity.ok(feeService.pay(req));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/student/payments/{studentId}")
     public ResponseEntity<List<Payment>> history(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getPaymentHistory(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/student/dashboard/{studentId}")
     public ResponseEntity<FeeDashboardResponse> dashboard(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getFeeDashboard(studentId));
+    }
+
+    @GetMapping("/section/{sectionId}/summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'PRINCIPAL')")
+    public ResponseEntity<List<StudentFeeSummaryDTO>> getSectionFeeSummary(@PathVariable String sectionId) {
+        return ResponseEntity.ok(feeService.getFeeSummaryBySection(sectionId));
+    }
+
+    @PostMapping("/admin/generate-terms")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
+    public ResponseEntity<String> generateTerms(@RequestBody FeeGenerationRequest req) {
+        feeService.generateTermFees(req.getClassSectionId());
+        return ResponseEntity.ok("3-Term structure generated successfully for section.");
+    }
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL','STUDENT')")
+    @GetMapping("/student/{studentId}/terms")
+    public ResponseEntity<List<StudentFeeDTO>> getStudentTermFees(@PathVariable String studentId) {
+        return ResponseEntity.ok(feeService.getAllFees(studentId));
     }
 }
