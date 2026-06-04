@@ -27,4 +27,7 @@ public class Driver {
     private User user;
 
 
+	public String busNumber;
+
+	public String assignedRoute;
 }

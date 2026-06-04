@@ -4,8 +4,12 @@ import lombok.Data;
 
 @Data
 public class DriverResponseDTO {
-    private String driverId;
-    private String name;
-    private String phone;
-    private String licenseNumber;
+
+    private String id;
+    private String fullName;
+    private String experience;
+    private String address;
+    private String licenseNo;
+    private String phoneNo;
+
 }

@@ -9,4 +9,6 @@ public interface TransportRouteRepository extends JpaRepository<TransportRoute, 
     boolean existsByRouteName(String routeName);
 
     List<TransportRoute> findByDriverId(String driverId);
+    List<TransportRoute> findByDriver_Id(String driverId);
+
 }
