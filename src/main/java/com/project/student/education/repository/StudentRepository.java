@@ -1,6 +1,7 @@
 package com.project.student.education.repository;
 
 import com.project.student.education.entity.Student;
+import com.project.student.education.entity.Teacher;
 import com.project.student.education.entity.User;
 import com.project.student.education.entity.superAdmin;
 
@@ -56,4 +57,6 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     @Query("SELECT s FROM Student s WHERE s.classSectionId = :classSectionId")
     List<Student> findByClassSectionId(@Param("classSectionId") String classSectionId);
+
+	Optional<Teacher> findByUser(User user);
 }
