@@ -34,4 +34,12 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
     // 2. Get full Teacher Objects for a single subject ID (If needed later)
     @Query("SELECT t FROM Teacher t JOIN t.subjectIds s WHERE s = :subjectId")
     List<Teacher> findTeachersBySubjectId(@Param("subjectId") String subjectId);
+    
+    @Query("""
+    	       SELECT COUNT(s)
+    	       FROM Teacher t
+    	       JOIN t.subjectIds s
+    	       WHERE t.teacherId = :teacherId
+    	       """)
+    	Long countSubjectsByTeacherId(@Param("teacherId") String teacherId);
 }

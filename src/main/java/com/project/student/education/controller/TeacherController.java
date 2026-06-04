@@ -3,6 +3,7 @@ package com.project.student.education.controller;
 import com.project.student.education.DTO.*;
 import com.project.student.education.entity.ExamMaster;
 import com.project.student.education.entity.TeacherAttendance;
+import com.project.student.education.enums.TeacherAttendanceStatus;
 import com.project.student.education.service.TeacherService;
 import com.project.student.education.service.TransportService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -162,5 +164,33 @@ public class TeacherController {
 
         return teacherService.getAttendance(teacherId);
     }
+    
+    
+    @GetMapping("/assignedCount")
+    public TeacherAssSubCountDTO getSubAssign() {
+    	
+    	return teacherService.getAssSub();
+    }
 
+    @GetMapping("/teacher/All-attendance")
+    public List<TeacherAttendanceResponseDTO>
+    getAllAttendance() {
+
+        return teacherService.getAllAttendance();
+    }
+
+    @GetMapping("/teacher/attendance/date/{date}")
+    public List<TeacherAttendanceResponseDTO> getAttendanceByDate(
+            @PathVariable LocalDate date,
+            @RequestParam(required = false) TeacherAttendanceStatus status) {
+
+        return teacherService.getAttendanceByDate(date, status);
+    }
+
+    @GetMapping("/dashboard/attendance")
+    public TeacherAttendanceDashboardDTO
+    getAttendanceDashboard() {
+
+        return teacherService.getAttendanceDashboard();
+    }
 }

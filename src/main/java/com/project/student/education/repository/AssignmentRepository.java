@@ -19,4 +19,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Assignme
     List<Assignment> findBySubject_SubjectId(String subjectSubjectId);
 
     List<Assignment> findByClassSection_ClassSectionId(String classSectionId);
+    
+    Long countByTeacherTeacherId(String teacherId);
+
 }
