@@ -33,4 +33,6 @@ public interface ExamMarkRepository extends JpaRepository<ExamMark, String> {
             @Param("subjectId") String subjectId,
             @Param("teacherId") String teacherId
     );
+
+    List<ExamMark> findByStudentId(String studentId);
 }
