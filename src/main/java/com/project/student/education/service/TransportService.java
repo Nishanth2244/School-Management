@@ -33,6 +33,7 @@ public class TransportService {
     private final StudentTransportRepository studentTransportRepository;
     private final NotificationService notificationService;
 
+    @Transactional
     public TransportRoute createRoute(TransportRouteRequest req) {
         if (transportRouteRepository.existsByRouteName(req.getRouteName())) {
             throw new RuntimeException("Route with same name already exists");
@@ -81,9 +82,14 @@ public class TransportService {
                 .orElseThrow(() -> new RuntimeException("Route not found"));
     }
 
+    @Transactional
     public StudentTransportDTO assignTransport(String studentId, TransportAssignRequest req) {
 
-        TransportRoute route = getRoute(req.getRouteId());
+        // CHANGE: Explicitly check for route existence before doing anything else
+        TransportRoute route = transportRouteRepository.findById(req.getRouteId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Assignment rejected: Route ID '" + req.getRouteId() + "' does not exist in the database."
+                ));
 
         StudentTransport st = studentTransportRepository
                 .findByStudentId(studentId)
@@ -102,11 +108,11 @@ public class TransportService {
         st.setFeeStatus(req.getFeeStatus());
 
         studentTransportRepository.save(st);
+
         notificationService.sendNotification(
                 studentId,
                 "transport assigned",
                 "Message",
-
                 "transport"
         );
 

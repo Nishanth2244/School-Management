@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Entity
 @Data
+@Table(name = "transport_route", schema = "school")
 public class TransportRoute {
 
     @Id
