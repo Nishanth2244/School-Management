@@ -70,7 +70,6 @@ public class TeacherController {
 
     // ADMIN + TEACHER
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL','TEACHER')")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER','PRINCIPAL')")
     @GetMapping("/all")
     public ResponseEntity<List<TeacherDTO>> getAllTeachers() {
         return ResponseEntity.ok(teacherService.getAllTeachers());
