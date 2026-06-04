@@ -9,6 +9,7 @@ import com.project.student.education.DTO.LeaveActionDTO;
 import com.project.student.education.DTO.LeaveStatsResponseDTO;
 import com.project.student.education.DTO.PrincipleLeaveResponseDTO;
 import com.project.student.education.DTO.TeacherLeaveRequestDTO;
+import com.project.student.education.DTO.TeacherOnLeaveDTO;
 import com.project.student.education.ExceptionHandling.ConflictException;
 import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.config.SecurityUtil;
@@ -87,18 +88,33 @@ public class LeaveService {
 		
 	}
 
+	
 	public LeaveStatsResponseDTO getStats() {
 		
 		long pending = teacherLeaveRequestRepository.countByLeaveStatus(LeaveStatus.PENDING);
 		long rejected = teacherLeaveRequestRepository.countByLeaveStatus(LeaveStatus.REJECTED);
 		
-		long onLeaveTodayCount = teacherLeaveRequestRepository.countTeachersOnLeaveToday(
+		List<TeacherLeaveRequest> todayLeaves = teacherLeaveRequestRepository.findLeavesForToday(
 				LocalDate.now(), 
 				LeaveStatus.APPROVED
 		);
 		
-		return new LeaveStatsResponseDTO(rejected,pending, onLeaveTodayCount);
-
+		List<TeacherOnLeaveDTO> todayLeaveDetails = todayLeaves.stream()
+				.map(leave -> new TeacherOnLeaveDTO(
+						leave.getTeacher().getTeacherName(),
+						leave.getLeaveType().name(),
+						leave.getReason()
+				))
+				.toList();
+		
+		long onLeaveTodayCount = todayLeaveDetails.size();
+		
+		return new LeaveStatsResponseDTO(
+		        pending, 
+		        onLeaveTodayCount, 
+		        rejected, 
+		        todayLeaveDetails
+		);
 	}
 
 	public List<PrincipleLeaveResponseDTO> getLeavesByStatus(LeaveStatus status) {
