@@ -33,4 +33,8 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Stri
             @Param("classSectionId") String classSectionId,
             @Param("classTeacherId") String classTeacherId
     );
+
+	List<ClassSection> findByIsActiveTrue();
+
+	List<ClassSection> findByClassTeacherIsNotNull();
 }

@@ -1,16 +1,36 @@
 package com.project.student.education.controller;
 
-import com.project.student.education.DTO.*;
-import com.project.student.education.entity.ExamMaster;
-import com.project.student.education.service.ExamService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.project.student.education.DTO.AddSubjectDTO;
+import com.project.student.education.DTO.AdminMarksResponseDTO;
+import com.project.student.education.DTO.AssignClassesDTO;
+import com.project.student.education.DTO.ExamMasterDTO;
+import com.project.student.education.DTO.ExamScheduleDTO;
+import com.project.student.education.DTO.ExamSubjectDTO;
+import com.project.student.education.DTO.ParentExamResponseDTO;
+import com.project.student.education.DTO.ParentResultResponseDTO;
+import com.project.student.education.DTO.ScheduleTimetableDTO;
+import com.project.student.education.DTO.StudentReportResponseDTO;
+import com.project.student.education.DTO.StudentResponseDTO;
+import com.project.student.education.DTO.SubmitMarksDTO;
+import com.project.student.education.DTO.TeacherSubjectResponseDTO;
+import com.project.student.education.entity.ExamMaster;
+import com.project.student.education.service.ExamService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api")
