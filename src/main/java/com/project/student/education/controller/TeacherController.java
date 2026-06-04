@@ -1,10 +1,8 @@
 package com.project.student.education.controller;
 
-import com.project.student.education.DTO.BulkEmailRequest;
-import com.project.student.education.DTO.ClassSectionMiniDTO;
-import com.project.student.education.DTO.TeacherDTO;
-import com.project.student.education.DTO.TeacherRegistrationDTO;
+import com.project.student.education.DTO.*;
 import com.project.student.education.entity.ExamMaster;
+import com.project.student.education.entity.TeacherAttendance;
 import com.project.student.education.service.TeacherService;
 import com.project.student.education.service.TransportService;
 import lombok.RequiredArgsConstructor;
@@ -148,6 +146,21 @@ public class TeacherController {
     public ResponseEntity<Map<String, Object>> getTeacherClassesWithSubjects(
             @PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.getTeacherClassesWithSubjects(teacherId));
+    }
+
+    @PostMapping("/attendance")
+    public String markAttendance(
+            @RequestBody MarkTeacherAttendanceRequest request) {
+
+        return teacherService.markAttendance(request);
+    }
+
+    @GetMapping("/teacher/{teacherId}/attendance")
+    public List<TeacherAttendanceResponseDTO>
+    getAttendance(
+            @PathVariable String teacherId) {
+
+        return teacherService.getAttendance(teacherId);
     }
 
 }
