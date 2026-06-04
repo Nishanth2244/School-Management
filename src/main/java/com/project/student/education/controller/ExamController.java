@@ -1,16 +1,39 @@
 package com.project.student.education.controller;
 
-import com.project.student.education.DTO.*;
-import com.project.student.education.entity.ExamMaster;
-import com.project.student.education.service.ExamService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.project.student.education.DTO.AddSubjectDTO;
+import com.project.student.education.DTO.AdminMarksResponseDTO;
+import com.project.student.education.DTO.AllExamsResponseDTO;
+import com.project.student.education.DTO.AssignClassesDTO;
+import com.project.student.education.DTO.DashboardAnalyticsDTO;
+import com.project.student.education.DTO.ExamMasterDTO;
+import com.project.student.education.DTO.ExamScheduleDTO;
+import com.project.student.education.DTO.ExamSubjectDTO;
+import com.project.student.education.DTO.HallTicketResponseDTO;
+import com.project.student.education.DTO.ParentExamResponseDTO;
+import com.project.student.education.DTO.ParentResultResponseDTO;
+import com.project.student.education.DTO.ScheduleTimetableDTO;
+import com.project.student.education.DTO.StudentReportResponseDTO;
+import com.project.student.education.DTO.StudentResponseDTO;
+import com.project.student.education.DTO.SubmitMarksDTO;
+import com.project.student.education.DTO.TeacherSubjectResponseDTO;
+import com.project.student.education.entity.ExamMaster;
+import com.project.student.education.service.ExamService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api")
@@ -75,7 +98,7 @@ public class ExamController {
     }
 
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'PRINCIPAL','TEACHER'')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'PRINCIPAL','TEACHER')")
     @GetMapping("/exams/{examId}/marks")
     public ResponseEntity<List<AdminMarksResponseDTO>> getAllMarks(
             @PathVariable String examId,
@@ -122,6 +145,71 @@ public class ExamController {
             @RequestParam(required = false) List<String> classSectionIds) {
 
         List<ExamMaster> exams = examService.getExamsForTeacher(teacherId, classSectionIds);
+        return ResponseEntity.ok(exams);
+    }
+
+
+
+    @GetMapping("/student/{studentId}/report")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL')")
+    public ResponseEntity<StudentReportResponseDTO> getStudentReportForAdmin(
+            @PathVariable String studentId,
+            @RequestParam(required = false) String academicYear) {
+
+        StudentReportResponseDTO report = examService.generateStudentReport(studentId, academicYear);
+        return ResponseEntity.ok(report);
+    }
+    @GetMapping("/teacher/student/{studentId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<StudentReportResponseDTO> getStudentReportForTeacher(
+            @PathVariable String studentId,
+            @RequestParam String teacherId,
+            @RequestParam(required = false) String academicYear) {
+
+        StudentReportResponseDTO report = examService.generateStudentReportForTeacher(studentId, teacherId, academicYear);
+        return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/teacher/dashboard/{teacherId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<DashboardAnalyticsDTO> getTeacherDashboard(@PathVariable String teacherId) {
+        DashboardAnalyticsDTO metrics = examService.getTeacherMetrics(teacherId);
+        return ResponseEntity.ok(metrics);
+    }
+
+    @GetMapping("/global")
+    @PreAuthorize("hasAnyRole('PRINCIPAL', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<DashboardAnalyticsDTO> getGlobalDashboard() {
+        DashboardAnalyticsDTO metrics = examService.getGlobalMetrics();
+        return ResponseEntity.ok(metrics);
+    }
+
+
+    @GetMapping("/exam/{examId}/student/{studentId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL', 'TEACHER')")
+    public ResponseEntity<HallTicketResponseDTO> getIndividualHallTicket(
+            @PathVariable String examId,
+            @PathVariable String studentId) {
+
+        HallTicketResponseDTO hallTicket = examService.generateHallTicket(examId, studentId);
+        return ResponseEntity.ok(hallTicket);
+    }
+
+
+    @GetMapping("/exam/{examId}/class-section/{classSectionId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL', 'TEACHER')")
+    public ResponseEntity<List<HallTicketResponseDTO>> getClassHallTickets(
+            @PathVariable String examId,
+            @PathVariable String classSectionId) {
+
+        List<HallTicketResponseDTO> hallTickets = examService.generateClassHallTickets(examId, classSectionId);
+        return ResponseEntity.ok(hallTickets);
+    }
+
+    @GetMapping("/all-exams")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL')")
+    public ResponseEntity<List<AllExamsResponseDTO>> getAllExamsForManagement() {
+        List<AllExamsResponseDTO> exams = examService.getAllExams();
         return ResponseEntity.ok(exams);
     }
 }

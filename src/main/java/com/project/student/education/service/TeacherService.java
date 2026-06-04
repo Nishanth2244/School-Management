@@ -1,32 +1,63 @@
 package com.project.student.education.service;
 
-import com.project.student.education.DTO.*;
-import com.project.student.education.ExceptionHandling.BadRequestException;
-import com.project.student.education.ExceptionHandling.ConflictException;
-import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
-import com.project.student.education.entity.*;
-import com.project.student.education.enums.Role;
-import com.project.student.education.enums.TeacherAttendanceStatus;
-import com.project.student.education.repository.*;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.project.student.education.DTO.ClassSectionMiniDTO;
+import com.project.student.education.DTO.MarkTeacherAttendanceRequest;
+import com.project.student.education.DTO.TeacherAssSubCountDTO;
+import com.project.student.education.DTO.TeacherAttendanceDashboardDTO;
+import com.project.student.education.DTO.TeacherAttendanceResponseDTO;
+import com.project.student.education.DTO.TeacherDTO;
+import com.project.student.education.DTO.TeacherRegistrationDTO;
+import com.project.student.education.DTO.TeacherWeeklyTimetableDTO;
+import com.project.student.education.ExceptionHandling.BadRequestException;
+import com.project.student.education.ExceptionHandling.ConflictException;
+import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
+import com.project.student.education.config.SecurityUtil;
+import com.project.student.education.entity.ClassSection;
+import com.project.student.education.entity.ClassSubjectMapping;
+import com.project.student.education.entity.IdGenerator;
+import com.project.student.education.entity.Teacher;
+import com.project.student.education.entity.TeacherAttendance;
+import com.project.student.education.entity.TeacherRegistrationToken;
+import com.project.student.education.entity.Timetable;
+import com.project.student.education.entity.User;
+import com.project.student.education.enums.Role;
+import com.project.student.education.enums.TeacherAttendanceStatus;
+import com.project.student.education.repository.AssignmentRepository;
+import com.project.student.education.repository.ClassSectionRepository;
+import com.project.student.education.repository.ClassSubjectMappingRepository;
+import com.project.student.education.repository.SubjectRepository;
+import com.project.student.education.repository.TeacherAttendanceRepository;
+import com.project.student.education.repository.TeacherRegistrationTokenRepository;
+import com.project.student.education.repository.TeacherRepository;
+import com.project.student.education.repository.TimetableRepository;
+import com.project.student.education.repository.UserRepository;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -47,6 +78,8 @@ public class TeacherService {
         private final AuthService authService;
 
         private final ClassSubjectMappingRepository classSubjectMappingRepository;
+        private final SecurityUtil securityUtil;
+        private final AssignmentRepository assignmentRepository;
 
         public TeacherDTO addTeacher(TeacherDTO dto) {
                 if (teacherRepository.existsByEmail(dto.getEmail())) {
@@ -625,6 +658,20 @@ public class TeacherService {
 
         return dto;
     }
+
+    public TeacherAssSubCountDTO getAssSub() {
+		
+		String userName = securityUtil.getCurrentUsername();
+		
+		Long assignmentCount = assignmentRepository.countByTeacherTeacherId(userName);
+		
+		Long subjectCount = teacherRepository.countSubjectsByTeacherId(userName);
+		
+		return TeacherAssSubCountDTO.builder()
+				.assignmentCount(assignmentCount)
+				.assignedSubjectCount(subjectCount)
+				.build();
+	}
     public List<TeacherAttendanceResponseDTO> getAllAttendance() {
 
         return teacherAttendanceRepository.findAll()
