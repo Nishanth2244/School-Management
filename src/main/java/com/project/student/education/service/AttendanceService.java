@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -279,5 +276,98 @@ public class AttendanceService {
                 .build();
     }
 
+    // ========================================================
+    // GET CLASS ATTENDANCE HISTORY WITH SUMMARY METRICS
+    // ========================================================
+    public Map<String, Object> getClassAttendanceHistory(String classSectionId, LocalDate startDate, LocalDate endDate) {
+        if (!classSectionRepository.existsById(classSectionId)) {
+            throw new RuntimeException("Class section not found: " + classSectionId);
+        }
 
+        List<Student> students = studentRepository.findByClassSection_ClassSectionId(classSectionId);
+        if (students.isEmpty()) {
+            throw new RuntimeException("No students found for class " + classSectionId);
+        }
+
+        // Fetch all attendance records for this class within the date range
+        List<StudentAttendance> attList = attendanceRepository
+                .findByClassSectionIdAndDateBetweenOrderByDateAsc(classSectionId, startDate, endDate);
+
+        // Group records by Date -> Student ID -> Status Value string
+        Map<LocalDate, Map<String, String>> attendanceRecordMap = attList.stream()
+                .collect(Collectors.groupingBy(
+                        StudentAttendance::getDate,
+                        Collectors.toMap(StudentAttendance::getStudentId, a -> a.getStatus().trim().toUpperCase())
+                ));
+
+        // Use your existing holiday verification repository call
+        List<Holiday> holidayList = holidayRepository.findByDateBetween(startDate, endDate);
+        Set<LocalDate> holidayDates = holidayList.stream()
+                .map(Holiday::getDate)
+                .collect(Collectors.toSet());
+
+        List<Map<String, Object>> dailyHistoryList = new ArrayList<>();
+
+        // Loop day by day through the range
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
+            boolean isHoliday = holidayDates.contains(date);
+
+            Map<String, String> currentDayAttendance = attendanceRecordMap.getOrDefault(date, Collections.emptyMap());
+
+            int presentCount = 0;
+            int absentCount = 0;
+            int notMarkedCount = 0;
+
+            List<Map<String, Object>> studentRecords = new ArrayList<>();
+
+            for (Student s : students) {
+                String status;
+
+                if (isSunday || isHoliday) {
+                    status = "HOLIDAY";
+                } else if (currentDayAttendance.containsKey(s.getStudentId())) {
+                    String val = currentDayAttendance.get(s.getStudentId());
+
+                    if (val.equals("P") || val.equals("PRESENT") || val.equals("PR")) {
+                        status = "PRESENT";
+                        presentCount++;
+                    } else if (val.equals("A") || val.equals("AB") || val.equals("ABSENT")) {
+                        status = "ABSENT";
+                        absentCount++;
+                    } else {
+                        status = "NOT_MARKED";
+                        notMarkedCount++;
+                    }
+                } else {
+                    status = "NOT_MARKED";
+                    notMarkedCount++;
+                }
+
+                studentRecords.add(Map.of(
+                        "studentId", s.getStudentId(),
+                        "name", s.getFullName(),
+                        "status", status
+                ));
+            }
+
+            Map<String, Object> daySummary = new LinkedHashMap<>();
+            daySummary.put("date", date.toString());
+            daySummary.put("isHoliday", isSunday || isHoliday);
+            daySummary.put("presentCount", presentCount); // ⭐ Track total present
+            daySummary.put("absentCount", absentCount);   // ⭐ Track total absent
+            daySummary.put("notMarkedCount", notMarkedCount);
+            daySummary.put("students", studentRecords);
+
+            dailyHistoryList.add(daySummary);
+        }
+
+        Map<String, Object> finalResponse = new LinkedHashMap<>();
+        finalResponse.put("classSectionId", classSectionId);
+        finalResponse.put("startDate", startDate.toString());
+        finalResponse.put("endDate", endDate.toString());
+        finalResponse.put("history", dailyHistoryList);
+
+        return finalResponse;
+    }
 }

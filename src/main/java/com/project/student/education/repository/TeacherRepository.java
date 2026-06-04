@@ -6,6 +6,7 @@ import com.project.student.education.entity.superAdmin;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -27,4 +28,10 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
     List<String> findAllTeacherIds();
 
 	Optional<Teacher> findByUser(User user);
+    @Query("SELECT t.teacherId FROM Teacher t JOIN t.subjectIds s WHERE s = :subjectId")
+    List<String> findTeacherIdsBySubjectId(@Param("subjectId") String subjectId);
+
+    // 2. Get full Teacher Objects for a single subject ID (If needed later)
+    @Query("SELECT t FROM Teacher t JOIN t.subjectIds s WHERE s = :subjectId")
+    List<Teacher> findTeachersBySubjectId(@Param("subjectId") String subjectId);
 }

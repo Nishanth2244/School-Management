@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/student")
@@ -91,6 +92,11 @@ public class ClassSectionController {
     @GetMapping("/students/unassigned/{grade}")
     public ResponseEntity<List<StudentDTO>> getUnassignedStudents(@PathVariable String grade) {
         return ResponseEntity.ok(classSectionService.getUnassignedStudentsByGrade(grade));
+    }
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL','SUPER_ADMIN','TEACHER')")
+    @GetMapping("/class-sections/class-teachers")
+    public ResponseEntity<List<Map<String, Object>>> getAllClassTeachersWithSections() {
+        return ResponseEntity.ok(classSectionService.getAllClassTeachersWithSections());
     }
 
 }

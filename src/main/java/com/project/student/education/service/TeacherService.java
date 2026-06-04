@@ -496,4 +496,60 @@ public class TeacherService {
                                 .replace("-", "")
                                 .substring(0, 10);
         }
+        // =========================================================================
+        // GET CLASSES AND ASSOCIATED SUBJECTS FOR A SPECIFIC TEACHER ID
+        // =========================================================================
+        public Map<String, Object> getTeacherClassesWithSubjects(String teacherId) {
+                Teacher teacher = teacherRepository.findById(teacherId)
+                        .orElseThrow(() -> new RuntimeException("Teacher not found with ID: " + teacherId));
+
+                // 1. Fetch all subject mapping assignments for this teacher
+                List<ClassSubjectMapping> subjectMappings = classSubjectMappingRepository
+                        .findByTeacher_TeacherId(teacherId);
+
+                // 2. Fetch classes where they are designated as the main Class Teacher
+                List<ClassSection> asClassTeacher = classSectionRepository
+                        .findByClassTeacher_TeacherId(teacherId);
+
+                // 3. Merge both groups into a unique Set of ClassSections
+                Set<ClassSection> allSections = new HashSet<>(asClassTeacher);
+                subjectMappings.forEach(mapping -> allSections.add(mapping.getClassSection()));
+
+                // 4. Construct the structured array elements
+                List<Map<String, Object>> classList = allSections.stream()
+                        .map(section -> {
+                                Map<String, Object> cMap = new LinkedHashMap<>();
+                                cMap.put("classSectionId", section.getClassSectionId());
+                                cMap.put("className", section.getClassName());
+                                cMap.put("section", section.getSection());
+                                cMap.put("academicYear", section.getAcademicYear());
+
+                                // Mark if they are the primary class manager for this room
+                                cMap.put("isPrimaryClassTeacher", asClassTeacher.contains(section));
+
+                                // Filter out the subjects THIS teacher teaches in THIS specific class section
+                                List<Map<String, String>> subjectsList = subjectMappings.stream()
+                                        .filter(m -> m.getClassSection().getClassSectionId().equals(section.getClassSectionId()))
+                                        .map(m -> {
+                                                Map<String, String> sMap = new LinkedHashMap<>();
+                                                sMap.put("subjectId", m.getSubject().getSubjectId());
+                                                sMap.put("subjectName", m.getSubject().getSubjectName());
+                                                sMap.put("subjectCode", m.getSubject().getSubjectCode());
+                                                return sMap;
+                                        })
+                                        .toList();
+
+                                cMap.put("subjectsTaught", subjectsList);
+                                return cMap;
+                        })
+                        .toList();
+
+                // 5. Wrap inside final root summary object
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("teacherId", teacher.getTeacherId());
+                response.put("teacherName", teacher.getTeacherName());
+                response.put("classes", classList);
+
+                return response;
+        }
 }

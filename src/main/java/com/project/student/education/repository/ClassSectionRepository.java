@@ -19,4 +19,6 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Stri
     boolean existsByClassTeacher_TeacherId(String classTeacherId);
 
 	List<ClassSection> findByIsActiveTrue();
+
+    List<ClassSection> findByClassTeacherIsNotNull();
 }

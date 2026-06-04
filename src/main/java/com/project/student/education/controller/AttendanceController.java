@@ -91,7 +91,7 @@ public class AttendanceController {
 //            },
 //            returnDescription = "Returns list of students with their attendance status."
 //    )
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL','TEACHER','STUDENT')")
     @GetMapping("/class/{classSectionId}/date/{date}")
     public ResponseEntity<List<Map<String, Object>>> getClassAttendanceForDate(
             @PathVariable String classSectionId,
@@ -125,7 +125,21 @@ public class AttendanceController {
                 attendanceService.getAttendanceForAcademicYear(studentId, year)
         );
     }
+    // ADMIN + TEACHER + PRINCIPAL
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','PRINCIPAL','SUPER_ADMIN')")
+    @GetMapping("/class/{classSectionId}/range")
+    public ResponseEntity<Map<String, Object>> getClassAttendanceHistory(
+            @PathVariable String classSectionId,
+            @RequestParam String startDate, // "YYYY-MM-DD"
+            @RequestParam String endDate   // "YYYY-MM-DD"
+    ) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
 
+        return ResponseEntity.ok(
+                attendanceService.getClassAttendanceHistory(classSectionId, start, end)
+        );
+    }
 
 
 }

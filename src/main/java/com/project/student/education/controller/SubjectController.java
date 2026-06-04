@@ -38,7 +38,7 @@ public class SubjectController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @PutMapping("/{subjectId}")
     public ResponseEntity<SubjectDTO> updateSubject(
             @PathVariable String subjectId,

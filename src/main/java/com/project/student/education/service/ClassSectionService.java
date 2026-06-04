@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -303,5 +304,30 @@ public class ClassSectionService {
         classSectionRepository.save(section);
 
         return "Class Section soft deleted successfully.";
+    }
+
+    // =========================================================================
+    // GET ALL CLASS TEACHERS WITH THEIR ASSIGNED CLASS SECTIONS
+    // =========================================================================
+    public List<Map<String, Object>> getAllClassTeachersWithSections() {
+        // 1. Fetch all class sections where a class teacher is assigned
+        List<ClassSection> sectionsWithTeachers = classSectionRepository.findByClassTeacherIsNotNull();
+
+        // 2. Map the entities into a clean, structured JSON response format
+        return sectionsWithTeachers.stream()
+                .map(section -> {
+                    Map<String, Object> map = new java.util.LinkedHashMap<>();
+                    Teacher teacher = section.getClassTeacher();
+
+                    map.put("teacherId", teacher.getTeacherId());
+                    map.put("teacherName", teacher.getTeacherName());
+                    map.put("classSectionId", section.getClassSectionId());
+                    map.put("className", section.getClassName());
+                    map.put("section", section.getSection());
+                    map.put("academicYear", section.getAcademicYear());
+
+                    return map;
+                })
+                .toList();
     }
 }
