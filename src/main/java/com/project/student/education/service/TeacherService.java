@@ -6,6 +6,7 @@ import com.project.student.education.ExceptionHandling.ConflictException;
 import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.entity.*;
 import com.project.student.education.enums.Role;
+import com.project.student.education.enums.TeacherAttendanceStatus;
 import com.project.student.education.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +44,7 @@ public class TeacherService {
         private final JavaMailSender mailSender;
         private final TeacherRegistrationTokenRepository registrationTokenRepository;
         private final TeacherAttendanceRepository teacherAttendanceRepository;
+        private final AuthService authService;
 
         private final ClassSubjectMappingRepository classSubjectMappingRepository;
 
@@ -617,6 +622,80 @@ public class TeacherService {
 
         dto.setRemarks(
                 attendance.getRemarks());
+
+        return dto;
+    }
+    public List<TeacherAttendanceResponseDTO> getAllAttendance() {
+
+        return teacherAttendanceRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+    public List<TeacherAttendanceResponseDTO> getAttendanceByDate(
+            LocalDate date,
+            TeacherAttendanceStatus status) {
+
+        List<TeacherAttendance> attendances;
+
+        if (status != null) {
+            attendances = teacherAttendanceRepository
+                    .findByAttendanceDateAndStatus(date, status);
+        } else {
+            attendances = teacherAttendanceRepository
+                    .findByAttendanceDate(date);
+        }
+
+        return attendances.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+
+    public TeacherAttendanceDashboardDTO getAttendanceDashboard() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Teacher teacher = teacherRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Teacher not found"));
+
+        LocalDate now = LocalDate.now();
+
+        int month = now.getMonthValue();
+        int year = now.getYear();
+
+        TeacherAttendanceDashboardDTO dto =
+                new TeacherAttendanceDashboardDTO();
+
+        dto.setTeacherId(teacher.getTeacherId());
+        dto.setTeacherName(teacher.getTeacherName());
+        dto.setMonth(month);
+        dto.setYear(year);
+
+        dto.setPresentCount(
+                teacherAttendanceRepository
+                        .countByTeacherAndStatusAndMonth(
+                                teacher.getTeacherId(),
+                                TeacherAttendanceStatus.PRESENT,
+                                month,
+                                year));
+
+        dto.setAbsentCount(
+                teacherAttendanceRepository
+                        .countByTeacherAndStatusAndMonth(
+                                teacher.getTeacherId(),
+                                TeacherAttendanceStatus.ABSENT,
+                                month,
+                                year));
+
 
         return dto;
     }
