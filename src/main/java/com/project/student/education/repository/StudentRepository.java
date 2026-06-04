@@ -1,6 +1,7 @@
 package com.project.student.education.repository;
 
 import com.project.student.education.entity.Student;
+import com.project.student.education.entity.Teacher;
 import com.project.student.education.entity.User;
 import com.project.student.education.entity.superAdmin;
 
@@ -15,9 +16,16 @@ import java.util.Optional;
 
 @Repository
 public interface StudentRepository extends JpaRepository<Student, String> {
+
+    // Fixes line 127 error: Uses the inner association path
+    List<Student> findByClassSection_ClassSectionIdIn(List<String> classSectionIds);
+
+    // Fixes line 228 error:
     List<Student> findByClassSection_ClassSectionId(String classSectionId);
 
-
+    // Fixes line 172 & 218 error: Dynamic projection for names
+    @Query("SELECT s.fullName FROM Student s WHERE s.studentId = :studentId")
+    String findNameById(@Param("studentId") String studentId);
 
     @Query("SELECT s.studentId FROM Student s WHERE s.classSection.classSectionId = :classSectionId")
     List<String> findStudentIdsByClassSectionId(String classSectionId);
@@ -26,11 +34,11 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     Long countStudents();
 
     @Query("""
-    SELECT s.gender,
-           COUNT(s) * 100.0 / (SELECT COUNT(st) FROM Student st)
-    FROM Student s
-    GROUP BY s.gender
-""")
+        SELECT s.gender,
+               COUNT(s) * 100.0 /(SELECT COUNT(st) FROM Student st)
+        FROM Student s
+        GROUP BY s.gender
+    """)
     List<Object[]> getGenderPercentage();
 
     Collection<Object> findByGradeAndClassSectionIsNull(String grade);
@@ -47,7 +55,8 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     Optional<Student> findByUserId(long id);
 
+    @Query("SELECT s FROM Student s WHERE s.classSectionId = :classSectionId")
+    List<Student> findByClassSectionId(@Param("classSectionId") String classSectionId);
 
-
-	Optional<Student> findByUser(User user);
+	Optional<Teacher> findByUser(User user);
 }

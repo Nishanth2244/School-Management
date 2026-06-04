@@ -1,8 +1,10 @@
 package com.project.student.education.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
+import com.project.student.education.DTO.DriverResponseDTO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -102,6 +104,69 @@ public class DriverService {
 	    
 	}
 
+    public List<DriverResponseDTO> getAllDrivers() {
 
+        return driverRepo.findAll()
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+    private DriverResponseDTO mapToDto(Driver driver) {
 
+        DriverResponseDTO dto = new DriverResponseDTO();
+
+        dto.setId(driver.getId());
+        dto.setFullName(driver.getFullName());
+        dto.setExperience(driver.getExperience());
+        dto.setAddress(driver.getAddress());
+        dto.setLicenseNo(driver.getLicenseNo());
+        dto.setPhoneNo(driver.getPhoneNo());
+
+        return dto;
+    }
+
+    @Transactional
+    public DriverResponseDTO updateDriver(
+            String driverId,
+            DriverResponseDTO request) {
+
+        Driver driver = driverRepo.findById(driverId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Driver not found"));
+
+        driver.setFullName(request.getFullName());
+        driver.setExperience(request.getExperience());
+        driver.setAddress(request.getAddress());
+        driver.setLicenseNo(request.getLicenseNo());
+        driver.setPhoneNo(request.getPhoneNo());
+
+        Driver updatedDriver = driverRepo.save(driver);
+
+        DriverResponseDTO response = new DriverResponseDTO();
+        response.setId(updatedDriver.getId());
+        response.setFullName(updatedDriver.getFullName());
+        response.setExperience(updatedDriver.getExperience());
+        response.setAddress(updatedDriver.getAddress());
+        response.setLicenseNo(updatedDriver.getLicenseNo());
+        response.setPhoneNo(updatedDriver.getPhoneNo());
+
+        return response;
+    }
+
+    @Transactional
+    public String deleteDriver(String driverId) {
+
+        Driver driver = driverRepo.findById(driverId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Driver not found"));
+
+        // Delete linked user if present
+        if (driver.getUser() != null) {
+            userRepository.delete(driver.getUser());
+        }
+
+        driverRepo.delete(driver);
+
+        return "Driver deleted successfully";
+    }
 }

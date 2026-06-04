@@ -27,8 +27,8 @@ public interface TeacherLeaveRequestRepository extends JpaRepository<TeacherLeav
 
 	List<TeacherLeaveRequest> findByTeacher_TeacherIdOrderByApplieDateTimeDesc(String teacherId);
 	
-	@Query("SELECT COUNT(l) FROM TeacherLeaveRequest l WHERE l.leaveStatus = :status AND :today BETWEEN l.startDate AND l.endDate")
-	long countTeachersOnLeaveToday(@Param("today") LocalDate today, @Param("status") LeaveStatus status);
+	@Query("SELECT l FROM TeacherLeaveRequest l WHERE l.leaveStatus = :status AND :today BETWEEN l.startDate AND l.endDate")
+	List<TeacherLeaveRequest> findLeavesForToday(@Param("today") LocalDate today, @Param("status") LeaveStatus status);
 	
 //	long countTeachersOnLeaveToday(LocalDate now);
 }

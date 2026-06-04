@@ -15,11 +15,12 @@ import java.time.LocalDateTime;
 public class Student {
 
     @Id
+    @Column(name = "student_id", length = 50)
     private String studentId;
 
-
-
+    @Column(name = "full_name", nullable = false)
     private String fullName;
+
     private LocalDate dateOfBirth;
     private String gender;
     private String bloodGroup;
@@ -29,7 +30,6 @@ public class Student {
     private String aadhaarNumber;
     private String grade;
     private String section;
-
 
     private String academicYear;
     private LocalDate joiningDate;
@@ -43,7 +43,6 @@ public class Student {
     private String contactNumber;
     private String email;
 
-
     private String fatherName;
     private String fatherContact;
     private String motherName;
@@ -51,14 +50,10 @@ public class Student {
     private String guardianName;
     private String guardianContact;
 
-
     private String emergencyContactName;
     private String emergencyContactNumber;
 
-
     private String profileImageUrl;
-
-
     private Boolean active;
 
     @OneToOne
@@ -69,12 +64,14 @@ public class Student {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
+    // This object association owns database write/update states for the column
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_section_id", referencedColumnName = "classSectionId")
     private ClassSection classSection;
+
     private Double totalFee;
 
 
-
-
+    @Column(name = "class_section_id", insertable = false, updatable = false)
+    private String classSectionId;
 }

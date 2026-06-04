@@ -14,55 +14,60 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/student/fee")
-//@AIExposeController
+// @AIExposeController
 public class FeeController {
 
     @Autowired
     private FeeService feeService;
-
-
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/create")
     public ResponseEntity<StudentFee> createFee(@RequestBody CreateFeeRequest req) {
         return ResponseEntity.ok(feeService.createFee(req));
     }
-//
-//    @AIExposeEpHttp(
-//            name = "Bulk Create Student Fees",
-//            description = "Creates fee entries for multiple students in one request using a list of CreateFeeRequest DTOs.",
-//            autoExecute = true,
-//            tags = {"Fees", "Bulk", "Admin", "Create"},
-//            reqParams = @Describe(
-//                    name = "reqs",
-//                    description = "List of CreateFeeRequest objects representing multiple student fees.",
-//                    dataType = "List<CreateFeeRequest>",
-//                    example = "See CreateFeeRequest DTO for detailed structure."
-//            ),
-//            returnDescription = "Returns a list of StudentFee objects created for the students."
-//    )
+
+    //
+    // @AIExposeEpHttp(
+    // name = "Bulk Create Student Fees",
+    // description = "Creates fee entries for multiple students in one request using
+    // a list of CreateFeeRequest DTOs.",
+    // autoExecute = true,
+    // tags = {"Fees", "Bulk", "Admin", "Create"},
+    // reqParams = @Describe(
+    // name = "reqs",
+    // description = "List of CreateFeeRequest objects representing multiple student
+    // fees.",
+    // dataType = "List<CreateFeeRequest>",
+    // example = "See CreateFeeRequest DTO for detailed structure."
+    // ),
+    // returnDescription = "Returns a list of StudentFee objects created for the
+    // students."
+    // )
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/bulk-create")
     public ResponseEntity<List<StudentFee>> bulk(@RequestBody List<CreateFeeRequest> reqs) {
         return ResponseEntity.ok(feeService.bulkCreate(reqs));
     }
 
-
-//    @AIExposeEpHttp(
-//            name = "Get All Fees for Student",
-//            description = "Fetches all fee records associated with a specific student using their studentId.",
-//            autoExecute = true,
-//            tags = {"Fees", "Admin", "Get", "Student"},
-//            pathParams = @Describe(
-//                    name = "studentId",
-//                    description = "Unique ID of the student whose fee records need to be retrieved.",
-//                    dataType = "String",
-//                    example = "STU2025003"
-//            ),
-//            returnDescription = "Returns a list of StudentFeeDTO objects containing fee details for the student."
-//    )
+    // @AIExposeEpHttp(
+    // name = "Get All Fees for Student",
+    // description = "Fetches all fee records associated with a specific student
+    // using their studentId.",
+    // autoExecute = true,
+    // tags = {"Fees", "Admin", "Get", "Student"},
+    // pathParams = @Describe(
+    // name = "studentId",
+    // description = "Unique ID of the student whose fee records need to be
+    // retrieved.",
+    // dataType = "String",
+    // example = "STU2025003"
+    // ),
+    // returnDescription = "Returns a list of StudentFeeDTO objects containing fee
+    // details for the student."
+    // )
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
     @GetMapping("/admin/student/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> allForStudent(@PathVariable String studentId) {
@@ -92,7 +97,6 @@ public class FeeController {
     public ResponseEntity<List<StudentFeeStatusDTO>> getClassFeeStatus(@PathVariable String classSectionId) {
         return ResponseEntity.ok(feeService.getClassStudentFeeStatus(classSectionId));
     }
-
 
     @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRNCIPAL','PARENT','ADMIN')")
     @GetMapping("/student/summary/{studentId}")
@@ -142,6 +146,7 @@ public class FeeController {
         feeService.generateTermFees(req.getClassSectionId());
         return ResponseEntity.ok("3-Term structure generated successfully for section.");
     }
+
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL','STUDENT')")
     @GetMapping("/student/{studentId}/terms")
     public ResponseEntity<List<StudentFeeDTO>> getStudentTermFees(@PathVariable String studentId) {

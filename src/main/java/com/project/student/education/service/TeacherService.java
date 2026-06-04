@@ -1,15 +1,13 @@
 package com.project.student.education.service;
 
-import com.project.student.education.DTO.ClassSectionMiniDTO;
-import com.project.student.education.DTO.TeacherDTO;
-import com.project.student.education.DTO.TeacherRegistrationDTO;
-import com.project.student.education.DTO.TeacherWeeklyTimetableDTO;
+import com.project.student.education.DTO.*;
 import com.project.student.education.ExceptionHandling.BadRequestException;
 import com.project.student.education.ExceptionHandling.ConflictException;
 import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
 import com.project.student.education.entity.*;
 import com.project.student.education.enums.Role;
 import com.project.student.education.repository.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +39,7 @@ public class TeacherService {
         private final SubjectRepository subjectRepository;
         private final JavaMailSender mailSender;
         private final TeacherRegistrationTokenRepository registrationTokenRepository;
+        private final TeacherAttendanceRepository teacherAttendanceRepository;
 
         private final ClassSubjectMappingRepository classSubjectMappingRepository;
 
@@ -552,4 +551,73 @@ public class TeacherService {
 
                 return response;
         }
+
+    @Transactional
+    public String markAttendance(
+            MarkTeacherAttendanceRequest request) {
+
+        Teacher teacher = teacherRepository.findById(
+                        request.getTeacherId())
+                .orElseThrow(() ->
+                        new RuntimeException("Teacher not found"));
+
+        LocalDate today = LocalDate.now();
+
+        if (teacherAttendanceRepository
+                .findByTeacher_TeacherIdAndAttendanceDate(
+                        teacher.getTeacherId(),
+                        today)
+                .isPresent()) {
+
+            throw new RuntimeException(
+                    "Attendance already marked");
+        }
+
+        TeacherAttendance attendance =
+                new TeacherAttendance();
+
+        attendance.setTeacher(teacher);
+        attendance.setAttendanceDate(today);
+        attendance.setStatus(request.getStatus());
+        attendance.setRemarks(request.getRemarks());
+
+        teacherAttendanceRepository.save(attendance);
+
+        return "Attendance marked successfully";
+    }
+
+    public List<TeacherAttendanceResponseDTO> getAttendance(
+            String teacherId) {
+
+        return teacherAttendanceRepository
+                .findByTeacher_TeacherIdOrderByAttendanceDateDesc(
+                        teacherId)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+    private TeacherAttendanceResponseDTO convertToDTO(
+            TeacherAttendance attendance) {
+
+        TeacherAttendanceResponseDTO dto =
+                new TeacherAttendanceResponseDTO();
+
+        dto.setId(attendance.getId());
+        dto.setTeacherId(
+                attendance.getTeacher().getTeacherId());
+
+        dto.setTeacherName(
+                attendance.getTeacher().getTeacherName());
+
+        dto.setAttendanceDate(
+                attendance.getAttendanceDate());
+
+        dto.setStatus(
+                attendance.getStatus().name());
+
+        dto.setRemarks(
+                attendance.getRemarks());
+
+        return dto;
+    }
 }
