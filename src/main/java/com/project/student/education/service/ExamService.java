@@ -376,4 +376,158 @@ public class ExamService {
         return generateStudentReport(studentId, academicYear);
     }
 
+    public DashboardAnalyticsDTO getTeacherMetrics(String teacherId) {
+        // 1. Fetch sections assigned to this teacher
+        List<ClassSection> sections = classSectionRepo.findByClassTeacher_TeacherId(teacherId);
+        return compileMetrics(sections, "TEACHER");
+    }
+
+    public DashboardAnalyticsDTO getGlobalMetrics() {
+        // 1. Management sees all sections school-wide
+        List<ClassSection> sections = classSectionRepo.findAll();
+        return compileMetrics(sections, "MANAGEMENT");
+    }
+
+    private DashboardAnalyticsDTO compileMetrics(List<ClassSection> sections, String role) {
+        List<ClassPerformanceDTO> classDetails = new ArrayList<>();
+        int totalStudents = 0;
+        double combinedPassSum = 0.0;
+        int evaluatedClassesCount = 0;
+
+        for (ClassSection section : sections) {
+            // Find students in this class section
+            List<Student> students = studentRepo.findByClassSectionId(section.getClassSectionId());
+            int studentCount = students.size();
+            totalStudents += studentCount;
+
+            // Compute pass percentage across all exam marks for these specific students
+            List<String> studentIds = students.stream().map(Student::getStudentId).collect(Collectors.toList());
+            double passPercentage = calculatePassPercentageForStudents(studentIds);
+
+            if (passPercentage > 0.0 || studentCount > 0) {
+                combinedPassSum += passPercentage;
+                evaluatedClassesCount++;
+            }
+
+            classDetails.add(ClassPerformanceDTO.builder()
+                    .classSectionId(section.getClassSectionId())
+                    .className(section.getClassName())
+                    .section(section.getSection())
+                    .classTeacherName(section.getClassTeacher() != null ? section.getClassTeacher().getTeacherName() : "Unassigned")
+                    .studentCount(studentCount)
+                    .classPassPercentage(Math.round(passPercentage * 100.0) / 100.0)
+                    .build());
+        }
+
+        double overallPass = evaluatedClassesCount > 0 ? (combinedPassSum / evaluatedClassesCount) : 0.0;
+
+        return DashboardAnalyticsDTO.builder()
+                .roleContext(role)
+                .totalActiveStudents(totalStudents)
+                .totalClassSections(sections.size())
+                .overallPassPercentage(Math.round(overallPass * 100.0) / 100.0)
+                .classDetails(classDetails)
+                .build();
+    }
+
+    private double calculatePassPercentageForStudents(List<String> studentIds) {
+        if (studentIds.isEmpty()) return 0.0;
+
+        // Custom performance aggregation logic
+        long totalMarksRecorded = 0;
+        long passedMarksCount = 0;
+
+        for (String studentId : studentIds) {
+            List<ExamMark> marks = examMarkRepo.findByStudentId(studentId);
+            totalMarksRecorded += marks.size();
+            passedMarksCount += marks.stream()
+                    .filter(m -> m.getObtainedMarks() != null && m.getObtainedMarks() >= 35.0)
+                    .count();
+        }
+
+        return totalMarksRecorded > 0 ? ((double) passedMarksCount / totalMarksRecorded) * 100.0 : 0.0;
+    }
+
+    public HallTicketResponseDTO generateHallTicket(String examId, String studentId) {
+        // 1. Fetch Student profile information
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found with ID: " + studentId));
+
+        // 2. Fetch Exam Master details
+        ExamMaster exam = examRepo.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        // 3. Fetch Class Section name details for visual representation
+        String classSectionId = student.getClassSectionId();
+        ClassSection section = classSectionRepo.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Class Section not found with ID: " + classSectionId));
+
+        // 4. Fetch all timetables/schedules tied to this exam and class group combo
+        List<ExamSchedule> schedulesEntityList = examScheduleRepo.findByExamIdAndClassSectionId(examId, classSectionId);
+
+        // 5. Map entities into the timetable DTO wrapper structure
+        List<ExamScheduleDTO> scheduleDTOs = schedulesEntityList.stream().map(schedule ->
+                ExamScheduleDTO.builder()
+                        .subjectId(schedule.getSubjectId())
+                        .examDate(schedule.getExamDate())
+                        .startTime(schedule.getStartTime())
+                        .endTime(schedule.getEndTime())
+                        .build()
+        ).collect(Collectors.toList());
+
+        // 6. Build and compile the comprehensive Hall Ticket payload
+        return HallTicketResponseDTO.builder()
+                .studentId(student.getStudentId())
+                .studentName(student.getFullName())
+                .rollNumber(student.getRollNumber())
+                .examName(exam.getExamName())
+                .classSectionName(section.getClassName() + " - " + section.getSection())
+                .academicYear(exam.getAcademicYear())
+                .schedules(scheduleDTOs)
+                .build();
+    }
+
+    /**
+     * Bulk generate Hall Tickets for an entire class section in a single batch array
+     */
+    public List<HallTicketResponseDTO> generateClassHallTickets(String examId, String classSectionId) {
+        // 1. Fetch all students who belong to the target class section route path
+        List<Student> studentsInClass = studentRepo.findByClassSectionId(classSectionId);
+
+        if (studentsInClass.isEmpty()) {
+            throw new RuntimeException("No active student profiles found registered inside class section: " + classSectionId);
+        }
+
+        // 2. Fetch shared structural components (Exam and Class Section metadata definitions)
+        ExamMaster exam = examRepo.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        ClassSection section = classSectionRepo.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Class Section not found with ID: " + classSectionId));
+
+        List<ExamSchedule> schedulesEntityList = examScheduleRepo.findByExamIdAndClassSectionId(examId, classSectionId);
+
+        List<ExamScheduleDTO> scheduleDTOs = schedulesEntityList.stream().map(schedule ->
+                ExamScheduleDTO.builder()
+                        .subjectId(schedule.getSubjectId())
+                        .examDate(schedule.getExamDate())
+                        .startTime(schedule.getStartTime())
+                        .endTime(schedule.getEndTime())
+                        .build()
+        ).collect(Collectors.toList());
+
+        // 3. Map out an array response container block by populating student details individually
+        return studentsInClass.stream().map(student ->
+                HallTicketResponseDTO.builder()
+                        .studentId(student.getStudentId())
+                        .studentName(student.getFullName())
+                        .rollNumber(student.getRollNumber())
+                        .examName(exam.getExamName())
+                        .classSectionName(section.getClassName() + " - " + section.getSection())
+                        .academicYear(exam.getAcademicYear())
+                        .schedules(scheduleDTOs) // Reuse the pre-compiled timetable array mapping blocks
+                        .build()
+        ).collect(Collectors.toList());
+    }
+
 }

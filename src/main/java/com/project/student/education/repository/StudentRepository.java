@@ -54,8 +54,6 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     Optional<Student> findByUserId(long id);
 
-
-
-	Optional<Student> findByUser(User user);
-
+    @Query("SELECT s FROM Student s WHERE s.classSectionId = :classSectionId")
+    List<Student> findByClassSectionId(@Param("classSectionId") String classSectionId);
 }
