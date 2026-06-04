@@ -1,11 +1,10 @@
-package com.project.student.education.config;
+package com.project.student.education.controller;
 
 
 import com.project.student.education.entity.Holiday;
 import com.project.student.education.service.HolidayService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
