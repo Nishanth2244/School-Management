@@ -20,19 +20,19 @@ public class NoticeController {
     @Autowired
     private NoticeService noticeService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
     public ResponseEntity<Notice> create(@RequestBody Notice notice) {
         Notice notice1 = noticeService.create(notice);
         return ResponseEntity.ok().body(notice1);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
+   // @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
     @GetMapping("/get/{id}")
     private ResponseEntity<Notice>getNotice(@PathVariable String id) {
         return ResponseEntity.ok(noticeService.getNotice(id));
     }
-    @PreAuthorize("hasRole('ADMIN')")
+   // @PreAuthorize("hasRole('ADMIN')")
 
     @PutMapping("/update/{id}")
     public ResponseEntity<Notice> updateNotice(
@@ -43,7 +43,7 @@ public class NoticeController {
     }
 
 
-    @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteNotice(@PathVariable String id) {
@@ -51,7 +51,7 @@ public class NoticeController {
         return ResponseEntity.ok("Notice deleted successfully");
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
+    //@PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','SUPER_ADMIN')")
 
     @GetMapping("/all")
     public ResponseEntity<List<Notice>> getAllNotices() {
