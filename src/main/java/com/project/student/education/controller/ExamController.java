@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.project.student.education.DTO.AddSubjectDTO;
 import com.project.student.education.DTO.AdminMarksResponseDTO;
+import com.project.student.education.DTO.AllExamsResponseDTO;
 import com.project.student.education.DTO.AssignClassesDTO;
 import com.project.student.education.DTO.DashboardAnalyticsDTO;
 import com.project.student.education.DTO.ExamMasterDTO;
