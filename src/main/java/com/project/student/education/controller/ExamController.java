@@ -182,4 +182,11 @@ public class ExamController {
         List<HallTicketResponseDTO> hallTickets = examService.generateClassHallTickets(examId, classSectionId);
         return ResponseEntity.ok(hallTickets);
     }
+
+    @GetMapping("/all-exams")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL')")
+    public ResponseEntity<List<AllExamsResponseDTO>> getAllExamsForManagement() {
+        List<AllExamsResponseDTO> exams = examService.getAllExams();
+        return ResponseEntity.ok(exams);
+    }
 }

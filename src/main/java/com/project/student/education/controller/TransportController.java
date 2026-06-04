@@ -70,6 +70,16 @@ public class TransportController {
         return ResponseEntity.ok(transportService.getStudentTransportDetails(studentId));
     }
 
+    @PreAuthorize("hasAnyRole('DRIVER', 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL')")
+    @GetMapping("/driver/route/{routeId}/students")
+    public ResponseEntity<List<StudentTransportDTO>> getDriverStudentsByRoute(@PathVariable String routeId) {
+
+        // Fetch the current user's username/ID from the security context
+        String currentUserId = securityUtil.getCurrentUsername();
+
+        return ResponseEntity.ok(transportService.getStudentsByRouteForDriver(currentUserId, routeId));
+    }
+
 
     // ADMIN + TEACHER — View students using each transport route
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER','PRINCIPAL')")
@@ -299,15 +309,15 @@ public class TransportController {
         return transportService.deleteDriver(driverId);
     }
 
-    @PreAuthorize("hasRole('DRIVER')")
-    @GetMapping("/driver/route/{routeId}/students")
-    public ResponseEntity<List<StudentTransportDTO>> getDriverStudentsByRoute(@PathVariable String routeId) {
-
-        // Securely fetch the driver's ID from the JWT token
-        String currentDriverId = securityUtil.getCurrentUsername();
-
-        return ResponseEntity.ok(transportService.getStudentsByRouteForDriver(currentDriverId, routeId));
-    }
+//    @PreAuthorize("hasRole('DRIVER')")
+//    @GetMapping("/driver/route/{routeId}/students")
+//    public ResponseEntity<List<StudentTransportDTO>> getDriverStudentsByRoute(@PathVariable String routeId) {
+//
+//        // Securely fetch the driver's ID from the JWT token
+//        String currentDriverId = securityUtil.getCurrentUsername();
+//
+//        return ResponseEntity.ok(transportService.getStudentsByRouteForDriver(currentDriverId, routeId));
+//    }
 
     // ADMIN ONLY — Bulk assign multiple students to a route
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
@@ -317,6 +327,8 @@ public class TransportController {
 
         return ResponseEntity.ok(transportService.assignBulkStudentsToRoute(batchRequest));
     }
+
+
 
 
 }

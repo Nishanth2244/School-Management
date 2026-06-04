@@ -530,4 +530,19 @@ public class ExamService {
         ).collect(Collectors.toList());
     }
 
+    public List<AllExamsResponseDTO> getAllExams() {
+        List<ExamMaster> allExams = examRepo.findAll();
+
+        return allExams.stream().map(exam ->
+                AllExamsResponseDTO.builder()
+                        .examId(exam.getExamId())
+                        .examName(exam.getExamName())
+                        .academicYear(exam.getAcademicYear())
+                        //.term(exam.geterm())
+                        // Mapping out your custom element collection collection layout
+                        .assignedClassSectionIds(exam.getAssignedClassSectionIds())
+                        .build()
+        ).collect(Collectors.toList());
+    }
+
 }
