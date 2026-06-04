@@ -162,5 +162,12 @@ public class TeacherController {
 
         return teacherService.getAttendance(teacherId);
     }
+    
+    
+    @GetMapping("/assignedCount")
+    public TeacherAssSubCountDTO getSubAssign() {
+    	
+    	return teacherService.getAssSub();
+    }
 
 }

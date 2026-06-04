@@ -4,6 +4,7 @@ import com.project.student.education.DTO.*;
 import com.project.student.education.ExceptionHandling.BadRequestException;
 import com.project.student.education.ExceptionHandling.ConflictException;
 import com.project.student.education.ExceptionHandling.ResourceNotFoundException;
+import com.project.student.education.config.SecurityUtil;
 import com.project.student.education.entity.*;
 import com.project.student.education.enums.Role;
 import com.project.student.education.repository.*;
@@ -42,6 +43,8 @@ public class TeacherService {
         private final TeacherAttendanceRepository teacherAttendanceRepository;
 
         private final ClassSubjectMappingRepository classSubjectMappingRepository;
+        private final SecurityUtil securityUtil;
+        private final AssignmentRepository assignmentRepository;
 
         public TeacherDTO addTeacher(TeacherDTO dto) {
                 if (teacherRepository.existsByEmail(dto.getEmail())) {
@@ -620,4 +623,18 @@ public class TeacherService {
 
         return dto;
     }
+
+    public TeacherAssSubCountDTO getAssSub() {
+		
+		String userName = securityUtil.getCurrentUsername();
+		
+		Long assignmentCount = assignmentRepository.countByTeacherTeacherId(userName);
+		
+		Long subjectCount = teacherRepository.countSubjectsByTeacherId(userName);
+		
+		return TeacherAssSubCountDTO.builder()
+				.assignmentCount(assignmentCount)
+				.assignedSubjectCount(subjectCount)
+				.build();
+	}
 }
