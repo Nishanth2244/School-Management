@@ -75,7 +75,7 @@ public class ExamController {
     }
 
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'PRINCIPAL','TEACHER'')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'PRINCIPAL','TEACHER')")
     @GetMapping("/exams/{examId}/marks")
     public ResponseEntity<List<AdminMarksResponseDTO>> getAllMarks(
             @PathVariable String examId,
@@ -123,5 +123,27 @@ public class ExamController {
 
         List<ExamMaster> exams = examService.getExamsForTeacher(teacherId, classSectionIds);
         return ResponseEntity.ok(exams);
+    }
+
+
+
+    @GetMapping("/student/{studentId}/report")  // <-- Changed path to eliminate the clash
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL')")
+    public ResponseEntity<StudentReportResponseDTO> getStudentReportForAdmin(
+            @PathVariable String studentId,
+            @RequestParam(required = false) String academicYear) {
+
+        StudentReportResponseDTO report = examService.generateStudentReport(studentId, academicYear);
+        return ResponseEntity.ok(report);
+    }
+    @GetMapping("/teacher/student/{studentId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<StudentReportResponseDTO> getStudentReportForTeacher(
+            @PathVariable String studentId,
+            @RequestParam String teacherId,
+            @RequestParam(required = false) String academicYear) {
+
+        StudentReportResponseDTO report = examService.generateStudentReportForTeacher(studentId, teacherId, academicYear);
+        return ResponseEntity.ok(report);
     }
 }
