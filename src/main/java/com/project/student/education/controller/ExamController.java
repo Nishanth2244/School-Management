@@ -127,7 +127,7 @@ public class ExamController {
 
 
 
-    @GetMapping("/student/{studentId}/report")  // <-- Changed path to eliminate the clash
+    @GetMapping("/student/{studentId}/report")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL')")
     public ResponseEntity<StudentReportResponseDTO> getStudentReportForAdmin(
             @PathVariable String studentId,
@@ -145,5 +145,41 @@ public class ExamController {
 
         StudentReportResponseDTO report = examService.generateStudentReportForTeacher(studentId, teacherId, academicYear);
         return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/teacher/dashboard/{teacherId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<DashboardAnalyticsDTO> getTeacherDashboard(@PathVariable String teacherId) {
+        DashboardAnalyticsDTO metrics = examService.getTeacherMetrics(teacherId);
+        return ResponseEntity.ok(metrics);
+    }
+
+    @GetMapping("/global")
+    @PreAuthorize("hasAnyRole('PRINCIPAL', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<DashboardAnalyticsDTO> getGlobalDashboard() {
+        DashboardAnalyticsDTO metrics = examService.getGlobalMetrics();
+        return ResponseEntity.ok(metrics);
+    }
+
+
+    @GetMapping("/exam/{examId}/student/{studentId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL', 'TEACHER')")
+    public ResponseEntity<HallTicketResponseDTO> getIndividualHallTicket(
+            @PathVariable String examId,
+            @PathVariable String studentId) {
+
+        HallTicketResponseDTO hallTicket = examService.generateHallTicket(examId, studentId);
+        return ResponseEntity.ok(hallTicket);
+    }
+
+
+    @GetMapping("/exam/{examId}/class-section/{classSectionId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'PRINCIPAL', 'TEACHER')")
+    public ResponseEntity<List<HallTicketResponseDTO>> getClassHallTickets(
+            @PathVariable String examId,
+            @PathVariable String classSectionId) {
+
+        List<HallTicketResponseDTO> hallTickets = examService.generateClassHallTickets(examId, classSectionId);
+        return ResponseEntity.ok(hallTickets);
     }
 }

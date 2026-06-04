@@ -1,10 +1,12 @@
 package com.project.student.education.DTO;
 
+import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
+@Builder
 public class ExamScheduleDTO {
     private String scheduleId;
     private String examId;

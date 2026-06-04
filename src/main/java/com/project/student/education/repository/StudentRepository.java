@@ -50,4 +50,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     boolean existsByEmail(String email);
 
     Optional<Student> findByUserId(long id);
+
+    @Query("SELECT s FROM Student s WHERE s.classSectionId = :classSectionId")
+    List<Student> findByClassSectionId(@Param("classSectionId") String classSectionId);
 }
