@@ -6,6 +6,8 @@ import com.project.student.education.entity.*;
 import com.project.student.education.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -481,23 +483,34 @@ public class TransportService {
         return "Driver deleted successfully";
     }
 
-    public List<StudentTransportDTO> getStudentsByRouteForDriver(String driverId, String routeId) {
-        // 1. Verify that the route exists and belongs to the authenticated driver
+    public List<StudentTransportDTO> getStudentsByRouteForDriver(String userId, String routeId) {
+        // 1. Verify that the route exists
         TransportRoute route = transportRouteRepository.findById(routeId)
                 .orElseThrow(() -> new RuntimeException("Route not found"));
 
-        if (route.getDriver() == null || !route.getDriver().getId().equals(driverId)) {
-            throw new RuntimeException("Access Denied: You are not assigned to this route.");
+        // 2. Check if the current user has administrative bypass privileges
+        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") ||
+                        role.equals("ROLE_SUPER_ADMIN") ||
+                        role.equals("ROLE_PRINCIPAL"));
+
+        // 3. If NOT an admin, enforce strict driver-route ownership validation
+        if (!isAdmin) {
+            if (route.getDriver() == null || !route.getDriver().getId().equals(userId)) {
+                throw new RuntimeException("Access Denied: You are not assigned to this route.");
+            }
         }
 
-        // 2. Fetch students mapped to this route
+        // 4. Fetch students mapped to this route
         List<StudentTransport> assignments = studentTransportRepository.findByRoute_RouteId(routeId);
 
         if (assignments.isEmpty()) {
             throw new RuntimeException("No students assigned to this route.");
         }
 
-        // 3. Reuse your existing mapping function to return StudentTransportDTOs
+        // 5. Reuse your existing mapping function
         return assignments.stream()
                 .map(this::mapToDTO)
                 .toList();
