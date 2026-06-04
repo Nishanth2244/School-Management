@@ -4,7 +4,9 @@ import com.project.student.education.DTO.BulkEmailRequest;
 import com.project.student.education.DTO.ClassSectionMiniDTO;
 import com.project.student.education.DTO.TeacherDTO;
 import com.project.student.education.DTO.TeacherRegistrationDTO;
+import com.project.student.education.entity.ExamMaster;
 import com.project.student.education.service.TeacherService;
+import com.project.student.education.service.TransportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,8 @@ public class TeacherController {
 
     @Autowired
     private TeacherService teacherService;
+    @Autowired
+    private TransportService transportService;
 
 
 //    // ADMIN ONLY
@@ -52,6 +56,7 @@ public class TeacherController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
     @PostMapping("/register")
     public ResponseEntity<TeacherDTO> registerTeacher(
             @RequestParam String token,
@@ -65,6 +70,7 @@ public class TeacherController {
 
     // ADMIN + TEACHER
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER','PRINCIPAL')")
     @GetMapping("/all")
     public ResponseEntity<List<TeacherDTO>> getAllTeachers() {
         return ResponseEntity.ok(teacherService.getAllTeachers());
@@ -72,7 +78,7 @@ public class TeacherController {
 
 
     // ADMIN + TEACHER
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER','PRINCIPAL')")
     @GetMapping("/{teacherId}")
     public ResponseEntity<TeacherDTO> getTeacherById(@PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.getTeacherById(teacherId));
@@ -98,7 +104,7 @@ public class TeacherController {
 
 
     // ADMIN ONLY
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
+    @PreAuthorize("hasAnyAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @PostMapping("/assign/{teacherId}/{classSectionId}")
     public ResponseEntity<String> assignTeacherToClass(
             @PathVariable String teacherId,
@@ -125,6 +131,8 @@ public class TeacherController {
             @PathVariable String teacherId) {
         return ResponseEntity.ok(teacherService.getClassesHandledByTeacher(teacherId));
     }
+
+
 
 
     // ADMIN + TEACHER

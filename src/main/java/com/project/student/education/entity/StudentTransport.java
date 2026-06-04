@@ -1,9 +1,6 @@
 package com.project.student.education.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
@@ -15,8 +12,10 @@ public class StudentTransport {
 
     private String studentId;
 
-    @ManyToOne
-    @JoinColumn(name = "route_id", referencedColumnName = "routeId")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(
+            name = "route_id",
+            referencedColumnName = "route_id"   )
     private TransportRoute route;
 
     private String pickupStop;
@@ -25,6 +24,8 @@ public class StudentTransport {
     private String dropTime;
 
     private String feeStatus;
+
+
 
 
 }

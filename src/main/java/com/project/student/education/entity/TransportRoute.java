@@ -1,10 +1,7 @@
 package com.project.student.education.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
@@ -12,6 +9,7 @@ import lombok.Data;
 public class TransportRoute {
 
     @Id
+    @Column(name = "route_id")
     private String routeId;
 
     private String routeName;

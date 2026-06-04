@@ -1,21 +1,14 @@
 package com.project.student.education.service;
 
 import com.project.student.education.DTO.*;
-import com.project.student.education.entity.ExamMaster;
-import com.project.student.education.entity.ExamRecord;
-import com.project.student.education.entity.IdGenerator;
-import com.project.student.education.entity.Student;
+import com.project.student.education.entity.*;
 import com.project.student.education.enums.ExamAttendanceStatus;
-import com.project.student.education.enums.ExamResultStatus;
 import com.project.student.education.enums.ExamStatus;
-import com.project.student.education.repository.ClassSectionRepository;
-import com.project.student.education.repository.ExamMasterRepository;
-import com.project.student.education.repository.ExamRecordRepository;
-import com.project.student.education.repository.SubjectRepository;
+import com.project.student.education.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,360 +24,255 @@ public class ExamService {
 
     private final IdGenerator idGenerator;
     private final ModelMapper modelMapper;
+
     private final ExamMasterRepository examRepo;
-    private final ExamRecordRepository examRecordRepo;
+    private final ExamSubjectRepository examSubjectRepo;
+    private final ExamScheduleRepository examScheduleRepo;
+    private final ExamMarkRepository examMarkRepo;
+    private final ResultRepository resultRepo;
+    private final ClassSectionRepository classSectionRepo;
+    private final StudentRepository studentRepo;
     private final NotificationService notificationService;
 
+    private String getCurrentUser() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
-    private final ClassSectionRepository classSectionRepo;
-    private final SubjectRepository subjectRepo;
-
-    public ExamMasterDTO createExam(ExamMasterDTO examMasterDTO) {
-        if (examRepo.existsByExamNameAndAcademicYear((examMasterDTO.getExamName()), examMasterDTO.getAcademicYear())) {
+    // Step 1: Create Exam
+    @Transactional
+    public ExamMasterDTO createExam(ExamMasterDTO dto) {
+        if (examRepo.existsByExamNameAndAcademicYear(dto.getExamName(), dto.getAcademicYear())) {
             throw new RuntimeException("Exam already exists for this academic year");
         }
-        String examId = idGenerator.generateId("EXM");
-        String username = getCurrentUser();
-
-        ExamMaster exam = modelMapper.map(examMasterDTO, ExamMaster.class);
-        exam.setExamId(examId);
+        ExamMaster exam = modelMapper.map(dto, ExamMaster.class);
+        exam.setExamId(idGenerator.generateId("EXM"));
         exam.setStatus(ExamStatus.CREATED);
-        exam.setCreatedBy(username);
+        exam.setCreatedBy(getCurrentUser());
+        exam.setCreatedAt(LocalDateTime.now());
 
         return modelMapper.map(examRepo.save(exam), ExamMasterDTO.class);
     }
 
-    public List<ExamMasterDTO> getAllExams() {
-        return examRepo.findAll()
-                .stream()
-                .map(exam -> modelMapper.map(exam, ExamMasterDTO.class))
+    // Step 2: Add Subjects to Exam
+    @Transactional
+    public ExamSubjectDTO addSubjectToExam(String examId, AddSubjectDTO dto) {
+        ExamMaster exam = examRepo.findById(examId)
+                .orElseThrow(() -> new EntityNotFoundException("Exam not found with ID: " + examId));
+
+        ExamSubject examSubject = new ExamSubject();
+        examSubject.setExamSubjectId(idGenerator.generateId("EXS"));
+        examSubject.setExamId(exam.getExamId());
+        examSubject.setSubjectId(dto.getSubjectId());
+        examSubject.setTeacherId(dto.getTeacherId());
+        examSubject.setMaxMarks(dto.getMaxMarks());
+        examSubject.setPassingMarks(dto.getPassingMarks());
+
+        return modelMapper.map(examSubjectRepo.save(examSubject), ExamSubjectDTO.class);
+    }
+
+    // Step 3: Assign Classes
+    @Transactional
+    public void assignClasses(String examId, List<String> classSectionIds) {
+        ExamMaster exam = examRepo.findById(examId)
+                .orElseThrow(() -> new EntityNotFoundException("Exam not found"));
+
+        // Assuming database tracking array mapping exists or linking entity update logic
+        exam.setAssignedClassSectionIds(classSectionIds);
+        examRepo.save(exam);
+    }
+
+    // Step 4: Schedule Exam Timetable
+    @Transactional
+    public ExamScheduleDTO scheduleTimetable(ScheduleTimetableDTO dto) {
+        ExamSchedule schedule = new ExamSchedule();
+        schedule.setScheduleId(idGenerator.generateId("SCH"));
+        schedule.setExamId(dto.getExamId());
+        schedule.setClassSectionId(dto.getClassSectionId());
+        schedule.setSubjectId(dto.getSubjectId());
+        schedule.setExamDate(dto.getExamDate());
+        schedule.setStartTime(dto.getStartTime());
+        schedule.setEndTime(dto.getEndTime());
+
+        return modelMapper.map(examScheduleRepo.save(schedule), ExamScheduleDTO.class);
+    }
+
+    // Step 5: Teacher Dashboard
+    public List<TeacherSubjectResponseDTO> getSubjectsForCurrentTeacher() {
+        String teacherUsername = getCurrentUser();
+        List<ExamSubject> assignments = examSubjectRepo.findByTeacherId(teacherUsername);
+
+        return assignments.stream().map(asgn -> {
+            ExamMaster exam = examRepo.findById(asgn.getExamId()).orElse(null);
+            return TeacherSubjectResponseDTO.builder()
+                    .examSubjectId(asgn.getExamSubjectId())
+                    .examName(exam != null ? exam.getExamName() : "N/A")
+                    .subjectId(asgn.getSubjectId())
+                    .maxMarks(asgn.getMaxMarks())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    // Step 6: Teacher Gets Student List
+    public List<StudentResponseDTO> getStudentsForExamSubject(String examSubjectId) {
+        ExamSubject assignment = examSubjectRepo.findById(examSubjectId)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment tracking element not found."));
+
+        // Guard Check: Verify identity constraints
+        if (!assignment.getTeacherId().equalsIgnoreCase(getCurrentUser())) {
+            throw new AccessDeniedException("Access Denied: You are not assigned to this course setup.");
+        }
+
+        // Fetch student lists map configuration records linked to target Exam Configuration context mappings
+        ExamMaster exam = examRepo.findById(assignment.getExamId()).orElseThrow();
+        List<Student> students = studentRepo.findByClassSection_ClassSectionIdIn(exam.getAssignedClassSectionIds());
+
+        return students.stream()
+                .map(s -> new StudentResponseDTO(s.getStudentId(), s.getFullName(), s.getRollNumber()))
                 .collect(Collectors.toList());
     }
 
-    public ExamMasterDTO getExamById(String examId) {
-        ExamMaster exam = examRepo.findById(examId)
-                .orElseThrow(() -> new EntityNotFoundException("Exam with id " + examId + " not found"));
-        return modelMapper.map(exam, ExamMasterDTO.class);
-    }
-
-    public ExamMasterDTO updateExamStatus(String examId, UpdateExamStatusRequest request) {
-        ExamMaster exam = examRepo.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
-
-        exam.setStatus(request.getStatus());
-        exam.setUpdatedBy(getCurrentUser());
-        exam.setUpdatedAt(LocalDateTime.now());
-
-        return modelMapper.map(examRepo.save(exam), ExamMasterDTO.class);
-    }
-
-
-    private String getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "SYSTEM";
-    }
-
-
+    // Step 7: Teacher Enters Marks
     @Transactional
-    public void enterMarks(String subjectId, SubjectMarksEntryRequest request) {
+    public void enterMarks(SubmitMarksDTO dto) {
+        ExamSubject assignment = examSubjectRepo.findById(dto.getExamSubjectId())
+                .orElseThrow(() -> new EntityNotFoundException("Subject entry reference parameters missing"));
 
-        for (MarksEntryRequest entry : request.getEntries()) {
+        // Guard Check: Security enforcement
+        if (!assignment.getTeacherId().equalsIgnoreCase(getCurrentUser())) {
+            throw new AccessDeniedException("Access Denied: You are not authorized to submit records for this group.");
+        }
 
-            ExamRecord record = examRecordRepo
-                    .findByExamIdAndStudentIdAndSubjectId(
-                            request.getExamId(),
-                            entry.getStudentId(),
-                            subjectId
-                    )
-                    .orElseThrow(() -> new RuntimeException(
-                            "Record not found for student: " + entry.getStudentId()
-                    ));
+        for (StudentMarkDTO markEntry : dto.getMarks()) {
+            // Check if record exists, if yes update, otherwise create new tracking instance
+            ExamMark mark = examMarkRepo.findByExamIdAndStudentIdAndSubjectId(
+                            assignment.getExamId(), markEntry.getStudentId(), assignment.getSubjectId())
+                    .orElse(new ExamMark());
 
-            boolean hasMarks =
-                    (entry.getPaperObtained() != null && entry.getPaperObtained() > 0) ||
-                            (entry.getAssignmentObtained() != null && entry.getAssignmentObtained() > 0);
+            mark.setMarkId(mark.getMarkId() == null ? idGenerator.generateId("MRK") : mark.getMarkId());
+            mark.setExamId(assignment.getExamId());
+            mark.setStudentId(markEntry.getStudentId());
+            mark.setSubjectId(assignment.getSubjectId());
+            mark.setTeacherId(assignment.getTeacherId());
+            mark.setObtainedMarks(markEntry.getObtainedMarks());
+            mark.setAttendanceStatus(markEntry.getObtainedMarks() != null ? ExamAttendanceStatus.PRESENT : ExamAttendanceStatus.ABSENT);
+            mark.setRemarks(markEntry.getRemarks());
 
-            ExamAttendanceStatus attendance =
-                    hasMarks ? ExamAttendanceStatus.PRESENT : ExamAttendanceStatus.ABSENT;
-
-            record.setAttendanceStatus(attendance);
-
-            if (attendance == ExamAttendanceStatus.PRESENT) {
-                record.setPaperObtained(entry.getPaperObtained());
-                record.setPaperTotal(entry.getPaperTotal());
-                record.setAssignmentObtained(entry.getAssignmentObtained());
-                record.setAssignmentTotal(entry.getAssignmentTotal());
-            } else {
-                record.setPaperObtained(0.0);
-                record.setAssignmentObtained(0.0);
-            }
-
-            record.setRemarks(entry.getRemarks());
-            record.setResultStatus(ExamResultStatus.ENTERED);
-            record.setUpdatedAt(LocalDateTime.now());
-
-            examRecordRepo.save(record);
+            examMarkRepo.save(mark);
         }
     }
 
+    // Step 8: Admin View All Marks
+    public List<AdminMarksResponseDTO> getAllMarksForAdmin(String examId, String classId, String subjectId, String teacherId) {
+        // Business filter abstraction layers logic using custom specs or repository parameter filters
+        List<ExamMark> marks = examMarkRepo.findFilteredMarks(examId, classId, subjectId, teacherId);
 
-    @Transactional
-    public void publishResult(String examId, String classSectionId, String adminName) {
-
-        List<ExamRecord> records =
-                examRecordRepo.findByExamIdAndClassSectionId(examId, classSectionId);
-
-        if (records.isEmpty())
-            throw new RuntimeException("No records found for publishing");
-
-
-        for (ExamRecord r : records) {
-
-            // 1️⃣ If attendance missing → ABSENT
-            if (r.getAttendanceStatus() == null) {
-                r.setAttendanceStatus(ExamAttendanceStatus.ABSENT);
-                r.setPaperObtained(0.0);
-                r.setAssignmentObtained(0.0);
-            }
-
-            // 2️⃣ If PRESENT but marks not entered → consider ABSENT
-            if (r.getAttendanceStatus() == ExamAttendanceStatus.PRESENT &&
-                    (r.getPaperObtained() == null || r.getAssignmentObtained() == null)) {
-
-                r.setAttendanceStatus(ExamAttendanceStatus.ABSENT);
-                r.setPaperObtained(0.0);
-                r.setAssignmentObtained(0.0);
-            }
-
-            // 3️⃣ Now publish the result
-            r.setResultStatus(ExamResultStatus.PUBLISHED);
-            r.setPublishedBy(adminName);
-            r.setUpdatedAt(LocalDateTime.now());
-        }
-
-        // 4️⃣ Send notifications to all students of class
-        List<Student> students = classSectionRepo.findById(classSectionId)
-                .orElseThrow(() -> new RuntimeException("Class section not found"))
-                .getStudents();
-
-        String examName = examRepo.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"))
-                .getExamName();
-
-        for (Student s : students) {
-            notificationService.sendNotification(
-                    s.getStudentId(),
-                    "Result Published",
-                    "Your result for exam '" + examName + "' is now available.",
-                    "EXAM"
-            );
-        }
-
-        examRecordRepo.saveAll(records);
+        return marks.stream().map(m -> AdminMarksResponseDTO.builder()
+                .markId(m.getMarkId())
+                .studentId(m.getStudentId())
+                .studentName(studentRepo.findNameById(m.getStudentId()))
+                .subjectId(m.getSubjectId())
+                .obtainedMarks(m.getObtainedMarks())
+                .attendanceStatus(m.getAttendanceStatus())
+                .build()).collect(Collectors.toList());
     }
 
-    public StudentExamResultDTO getStudentResult(String examId, String studentId, String classSectionId) {
+    // Step 9: Parent View - Available Exams
+    public List<ParentExamResponseDTO> getExamsForParent(String studentId) {
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new EntityNotFoundException("Student parameters not found."));
 
-        List<ExamRecord> records =
-                examRecordRepo.findByExamIdAndStudentId(examId, studentId);
+        List<ExamMaster> exams = examRepo.findExamsByClassSectionId(student.getClassSectionId());
+        return exams.stream().map(e -> new ParentExamResponseDTO(e.getExamName(), e.getStartDate()))
+                .collect(Collectors.toList());
+    }
 
-        if (records.isEmpty())
-            throw new RuntimeException("No records found for student.");
+    // Step 9: Parent View - Timetable
+    public List<ExamScheduleDTO> getTimetableForStudent(String studentId) {
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new EntityNotFoundException("Student entity not found"));
 
-        boolean published = records.stream()
-                .allMatch(r -> r.getResultStatus() == ExamResultStatus.PUBLISHED);
+        List<ExamSchedule> schedules = examScheduleRepo.findByClassSectionId(student.getClassSectionId());
+        return schedules.stream().map(s -> modelMapper.map(s, ExamScheduleDTO.class)).collect(Collectors.toList());
+    }
 
-        if (!published)
-            throw new RuntimeException("Result not yet published by admin.");
+    // Step 9: Parent View - Compile & Fetch Result
+    public ParentResultResponseDTO getResultForParent(String examId, String studentId) {
+        Result result = resultRepo.findByExamIdAndStudentId(examId, studentId)
+                .orElseThrow(() -> new RuntimeException("Results are not compiled or published for this exam."));
 
-        double totalObt = 0;
-        double totalMax = 0;
-
-        List<SubjectResultDTO> subjects = new ArrayList<>();
-
-        boolean hasZeroSubject = false;  // ⭐ For rank check
-
-        for (ExamRecord r : records) {
-
-            double paper = r.getPaperObtained() != null ? r.getPaperObtained() : 0;
-            double paperMax = r.getPaperTotal() != null ? r.getPaperTotal() : 0;
-
-            double assign = r.getAssignmentObtained() != null ? r.getAssignmentObtained() : 0;
-            double assignMax = r.getAssignmentTotal() != null ? r.getAssignmentTotal() : 0;
-
-            double finalTotal = paper + assign;
-            double finalMax = paperMax + assignMax;
-
-            totalObt += finalTotal;
-            totalMax += finalMax;
-
-            if (finalTotal == 0)
-                hasZeroSubject = true;  // ❌ No rank
-
-            // ⭐ APPLY RULES
-            String status;
-            if (r.getAttendanceStatus() == ExamAttendanceStatus.ABSENT) {
-                status = "ABSENT";
-            } else if (finalTotal >= 36) {
-                status = "PASS";
-            } else {
-                status = "FAIL";
-            }
-
-            subjects.add(
-                    SubjectResultDTO.builder()
-                            .subjectId(r.getSubjectId())
-                            .subjectName(r.getSubject().getSubjectName())
-                            .paperObtained(paper)
-                            .paperTotal(paperMax)
-                            .assignmentObtained(assign)
-                            .assignmentTotal(assignMax)
-                            .subjectTotalObtained(finalTotal)
-                            .subjectTotalMax(finalMax)
-                            .attendanceStatus(r.getAttendanceStatus())
-                            .status(status)
-                            .build()
-            );
+        if (!result.getPublished()) {
+            throw new RuntimeException("Results for this exam have not been made public yet.");
         }
 
-        // ⭐ Rank Logic
-        Integer rank = hasZeroSubject ? null :
-                examRecordRepo.calculateRank(examId, classSectionId, studentId);
+        List<ExamMark> finalMarks = examMarkRepo.findByExamIdAndStudentId(examId, studentId);
+        List<ParentSubjectMarkDTO> parsedSubjects = finalMarks.stream().map(m -> {
+            ExamSubject config = examSubjectRepo.findByExamIdAndSubjectId(examId, m.getSubjectId()).orElse(null);
+            return ParentSubjectMarkDTO.builder()
+                    .subject(m.getSubjectId())
+                    .marks(m.getObtainedMarks())
+                    .maxMarks(config != null ? config.getMaxMarks() : 100)
+                    .build();
+        }).collect(Collectors.toList());
 
-        return StudentExamResultDTO.builder()
-                .examId(examId)
-                .examName(examRepo.findById(examId).get().getExamName())
-                .studentId(studentId)
-                .studentName(records.get(0).getStudent().getFullName())
-                .className(records.get(0).getClassSection().getClassName())
-                .section(records.get(0).getClassSection().getSection())
-                .totalMarksObtained(totalObt)
-                .totalMarksMax(totalMax)
-                .percentage((totalMax > 0 ? (totalObt / totalMax) * 100 : 0))
-                .rank(rank)
-                .subjects(subjects)
+        return ParentResultResponseDTO.builder()
+                .studentName(studentRepo.findNameById(studentId))
+                .percentage(result.getPercentage())
+                .rank(result.getRank())
+                .subjects(parsedSubjects)
                 .build();
     }
 
+    // Core Processing Workflow: Processing individual grades and establishing final ranking positions
+    @Transactional
+    public void publishClassResults(String examId, String classSectionId) {
+        List<Student> students = studentRepo.findByClassSection_ClassSectionId(classSectionId);
+        List<Result> calculatedResults = new ArrayList<>();
 
-    public List<StudentExamRecordDTO> getExamRecords(String examId, String classSectionId, String subjectId) {
+        for (Student student : students) {
+            List<ExamMark> studentMarks = examMarkRepo.findByExamIdAndStudentId(examId, student.getStudentId());
+            if (studentMarks.isEmpty()) continue;
 
-        List<ExamRecord> records =
-                examRecordRepo.findByExamIdAndClassSectionIdAndSubjectId(
-                        examId, classSectionId, subjectId
-                );
+            double marksEarned = studentMarks.stream().mapToDouble(m -> m.getObtainedMarks() != null ? m.getObtainedMarks() : 0.0).sum();
 
-        return records.stream().map(r ->
-                StudentExamRecordDTO.builder()
-                        .recordId(r.getRecordId())
-                        .studentId(r.getStudentId())
-                        .fullName(r.getStudent().getFullName())
-                        .rollNumber(r.getStudent().getRollNumber())
-                        .build()
-        ).toList();
+            // Collect the max criteria targets via dynamic structural iterations
+            double totalPointsPossible = studentMarks.stream().mapToDouble(m -> {
+                return examSubjectRepo.findByExamIdAndSubjectId(examId, m.getSubjectId()).map(ExamSubject::getMaxMarks).orElse(100);
+            }).sum();
+
+            Result result = resultRepo.findByExamIdAndStudentId(examId, student.getStudentId()).orElse(new Result());
+            result.setResultId(result.getResultId() == null ? idGenerator.generateId("RES") : result.getResultId());
+            result.setExamId(examId);
+            result.setStudentId(student.getStudentId());
+            result.setTotalMarks(marksEarned);
+            result.setPercentage(totalPointsPossible > 0 ? (marksEarned / totalPointsPossible) * 100 : 0.0);
+            result.setPublished(true);
+
+            calculatedResults.add(result);
+        }
+
+        // Apply Rank Calculations relative to performance inside group
+        calculatedResults.sort((r1, r2) -> Double.compare(r2.getTotalMarks(), r1.getTotalMarks()));
+        for (int i = 0; i < calculatedResults.size(); i++) {
+            calculatedResults.get(i).setRank(i + 1);
+            resultRepo.save(calculatedResults.get(i));
+
+            // Notify students of final updates
+            notificationService.sendNotification(
+                    calculatedResults.get(i).getStudentId(),
+                    "Results Out",
+                    "Your metrics report data cards are active.",
+                    "EXAM"
+            );
+        }
     }
 
-    public List<StudentExamResultDTO> getClassExamResults(String examId, String classSectionId) {
-
-        List<ExamRecord> records =
-                examRecordRepo.findByExamIdAndClassSectionId(examId, classSectionId);
-
-        if (records.isEmpty()) {
-            return new ArrayList<>();
+    public List<ExamMaster> getExamsForTeacher(String teacherId, List<String> assignedClassSectionIds) {
+        if (assignedClassSectionIds == null || assignedClassSectionIds.isEmpty()) {
+            // Fallback: If no classes are explicitly passed, find exams where they teach a subject
+            return examRepo.findExamsByTeacherAndClasses(teacherId, List.of(""));
         }
 
-        Map<String, List<ExamRecord>> studentRecordsMap =
-                records.stream().collect(Collectors.groupingBy(ExamRecord::getStudentId));
-
-        List<StudentExamResultDTO> classResults = new ArrayList<>();
-
-        for (Map.Entry<String, List<ExamRecord>> entry : studentRecordsMap.entrySet()) {
-
-            String studentId = entry.getKey();
-            List<ExamRecord> myRecords = entry.getValue();
-
-            double totalObtained = 0;
-            double totalMax = 0;
-            List<SubjectResultDTO> subjects = new ArrayList<>();
-
-            boolean hasZeroSubject = false;
-
-            Student student = myRecords.get(0).getStudent();
-
-            for (ExamRecord r : myRecords) {
-
-                double pObt = r.getPaperObtained() != null ? r.getPaperObtained() : 0;
-                double pTot = r.getPaperTotal() != null ? r.getPaperTotal() : 0;
-
-                double aObt = r.getAssignmentObtained() != null ? r.getAssignmentObtained() : 0;
-                double aTot = r.getAssignmentTotal() != null ? r.getAssignmentTotal() : 0;
-
-                double subTotal = pObt + aObt;
-                double subMax = pTot + aTot;
-
-                totalObtained += subTotal;
-                totalMax += subMax;
-
-                if (subTotal == 0)
-                    hasZeroSubject = true;
-
-                String status;
-                if (r.getAttendanceStatus() == ExamAttendanceStatus.ABSENT) {
-                    status = "ABSENT";
-                } else if (subTotal >= 36) {
-                    status = "PASS";
-                } else {
-                    status = "FAIL";
-                }
-
-                subjects.add(SubjectResultDTO.builder()
-                        .subjectId(r.getSubjectId())
-                        .subjectName(r.getSubject().getSubjectName())
-                        .paperObtained(pObt)
-                        .paperTotal(pTot)
-                        .assignmentObtained(aObt)
-                        .assignmentTotal(aTot)
-                        .subjectTotalObtained(subTotal)
-                        .subjectTotalMax(subMax)
-                        .attendanceStatus(r.getAttendanceStatus())
-                        .status(status)
-                        .build());
-            }
-
-            double percentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
-
-            classResults.add(StudentExamResultDTO.builder()
-                    .examId(examId)
-                    .studentId(studentId)
-                    .studentName(student.getFullName())
-                    .rollNumber(student.getRollNumber())
-                    .totalMarksObtained(totalObtained)
-                    .totalMarksMax(totalMax)
-                    .percentage(percentage)
-                    .subjects(subjects)
-                    .rank(null)  // temporarily
-                    .build());
-        }
-
-        // ⭐ Sort by total marks
-        classResults.sort((a, b) ->
-                Double.compare(b.getTotalMarksObtained(), a.getTotalMarksObtained()));
-
-        // ⭐ Rank assignment (skip zero subject)
-        int rank = 1;
-
-        for (StudentExamResultDTO dto : classResults) {
-
-            boolean hasZero = dto.getSubjects().stream()
-                    .anyMatch(sub -> sub.getSubjectTotalObtained() == 0);
-
-            if (hasZero) {
-                dto.setRank(null);
-            } else {
-                dto.setRank(rank++);
-            }
-        }
-
-        return classResults;
+        return examRepo.findExamsByTeacherAndClasses(teacherId, assignedClassSectionIds);
     }
+
 }
