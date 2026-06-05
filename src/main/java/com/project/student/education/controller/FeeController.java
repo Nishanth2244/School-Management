@@ -68,67 +68,67 @@ public class FeeController {
     // returnDescription = "Returns a list of StudentFeeDTO objects containing fee
     // details for the student."
     // )
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/admin/student/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> allForStudent(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getAllFees(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/admin/payments")
     public ResponseEntity<List<Payment>> allPayments() {
         return ResponseEntity.ok(feeService.getAllPayments());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @PostMapping("/admin/class-fee")
     public ResponseEntity<ClassFeeResponse> createFeeForClass(@RequestBody ClassFeeRequest req) {
         return ResponseEntity.ok(feeService.createFeeForClass(req));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/admin/dashboard/stats")
     public ResponseEntity<List<ClassFeeStatsDTO>> getAdminFeeStats(@RequestHeader String Authorization) {
         return ResponseEntity.ok(feeService.getAllClassesFeeStats());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/admin/class-status/{classSectionId}")
     public ResponseEntity<List<StudentFeeStatusDTO>> getClassFeeStatus(@PathVariable String classSectionId) {
         return ResponseEntity.ok(feeService.getClassStudentFeeStatus(classSectionId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRNCIPAL','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRINCIPAL','PARENT','ADMIN')")
     @GetMapping("/student/summary/{studentId}")
     public ResponseEntity<FeeSummaryDTO> summary(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getSummary(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRNCIPAL','PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','SUPER_ADMIN','PRINCIPAL','PARENT','ADMIN')")
     @GetMapping("/student/pending/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> pending(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getPendingFees(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/student/all/{studentId}")
     public ResponseEntity<List<StudentFeeDTO>> all(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getAllFees(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @PostMapping("/student/pay")
     public ResponseEntity<Payment> pay(@RequestBody CreatePaymentRequest req) {
         return ResponseEntity.ok(feeService.pay(req));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/student/payments/{studentId}")
     public ResponseEntity<List<Payment>> history(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getPaymentHistory(studentId));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRNCIPAL')")
+    @PreAuthorize("hasAnyRole('STUDENT','PARENT','ADMIN','SUPER_ADMIN','PRINCIPAL')")
     @GetMapping("/student/dashboard/{studentId}")
     public ResponseEntity<FeeDashboardResponse> dashboard(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getFeeDashboard(studentId));
