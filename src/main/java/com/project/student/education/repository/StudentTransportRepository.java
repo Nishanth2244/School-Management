@@ -16,4 +16,6 @@ public interface StudentTransportRepository
     List<StudentTransport> findByRoute_RouteId(String routeId);
 
     List<StudentTransport> findByRoute_Driver_Id(String driverId);
+
+    
 }

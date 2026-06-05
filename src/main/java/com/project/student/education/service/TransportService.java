@@ -578,4 +578,37 @@ public class TransportService {
         return savedDTOs;
     }
 
+    public StudentTransportDetailsResponse getRouteDetailsForParent(String studentId) {
+        // 1. Fetch the tracking record linking the student to a transport row
+        // If no row exists in student_transport for this ID, throw a 404 Not Found
+        StudentTransport transport = studentTransportRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "No transport facility has been assigned to student ID: " + studentId
+                ));
+
+        // 2. Extract the associated route entity mapped via your @ManyToOne / @OneToOne relation
+        TransportRoute route = transport.getRoute();
+
+        // Safety check: verify the transport mapping isn't pointing to a null route reference
+        if (route == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND,
+                    "Transport allocation found, but no route details are linked to it."
+            );
+        }
+
+
+        StudentTransportDetailsResponse response = new StudentTransportDetailsResponse();
+        response.setStudentId(transport.getStudentId());
+        response.setRouteId(route.getRouteId());
+        response.setRouteName(route.getRouteName());
+        response.setDriverName(route.getDriver().getFullName());
+        response.setDriverPhone(route.getDriver().getPhoneNo());
+        response.setPickupTime(route.getPickupStartTime());
+        response.setDropTime(route.getDropStartTime());
+
+        return response;
+    }
+
 }

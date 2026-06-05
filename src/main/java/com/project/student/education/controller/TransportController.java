@@ -328,6 +328,13 @@ public class TransportController {
         return ResponseEntity.ok(transportService.assignBulkStudentsToRoute(batchRequest));
     }
 
+    @GetMapping("/student/{studentId}/tracking")
+    @PreAuthorize("hasAnyRole('PARENT', 'ADMIN')")
+    public ResponseEntity<StudentTransportDetailsResponse> getStudentBusDetails(@PathVariable String studentId) {
+        StudentTransportDetailsResponse details = transportService.getRouteDetailsForParent(studentId);
+        return ResponseEntity.ok(details);
+    }
+
 
 
 
