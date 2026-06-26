@@ -4,6 +4,8 @@ import com.project.student.education.DTO.*;
 import com.project.student.education.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/student/auth")
 @RequiredArgsConstructor
@@ -67,6 +70,8 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest req) {
+    	
+    	log.info("OTP requested");
         return ResponseEntity.ok(Map.of(
                 "message", authService.sendOtp(req)
         ));
