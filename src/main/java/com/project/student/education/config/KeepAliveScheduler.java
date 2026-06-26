@@ -15,7 +15,7 @@ public class KeepAliveScheduler {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String myUrl = "http://localhost:8081/api/driver/all";
+    private final String myUrl = "http://localhost:8083/api/driver/all";
 
     @Scheduled(fixedRate = 600000)
     public void keepAlive() {

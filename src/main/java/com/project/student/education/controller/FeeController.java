@@ -46,7 +46,7 @@ public class FeeController {
     // returnDescription = "Returns a list of StudentFee objects created for the
     // students."
     // )
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','PRINCIPAL')")
     @PostMapping("/admin/bulk-create")
     public ResponseEntity<List<StudentFee>> bulk(@RequestBody List<CreateFeeRequest> reqs) {
         return ResponseEntity.ok(feeService.bulkCreate(reqs));

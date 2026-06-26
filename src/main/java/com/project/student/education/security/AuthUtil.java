@@ -14,14 +14,15 @@ import java.util.Date;
 @Service
 public class AuthUtil {
 
-    @Value("${jwt.secret}")
-    private String secret;
+//    @Value("${jwt.secret}")
+    private String secret = "rIULERHKJEWLsdffLAKHGJJWqwjsfdjQHwefhjgkjagtajjkhhkjwlawiuhq";
 
-    @Value("${jwt.access.expiration}")
-    private long accessExp;
+//    @Value("${jwt.access.expiration}")
+    private long accessExp = 172800000;
 
-    @Value("${jwt.refresh.expiration}")
-    private long refreshExp;
+//    @Value("${jwt.refresh.expiration}")
+    private long refreshExp = 172800000;
+
 
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
